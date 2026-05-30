@@ -735,7 +735,21 @@ async function sendWhatsAppMessage(settings, phone, msgType, text, imageUrl, ima
     body.image = { link: imageUrl, caption: imageCaption || '' };
   } else if (msgType === 'template') {
     body.type = 'template';
-    body.template = { name: templateName, language: { code: 'en_US' } };
+    const tplComponents = [];
+    // Image header component
+    if (imageUrl) {
+      tplComponents.push({ type: 'header', parameters: [{ type: 'image', image: { link: imageUrl } }] });
+    }
+    // Body variables (text replacements like {{1}}, {{2}})
+    if (text) {
+      const vars = text.split('||').map(v => ({ type: 'text', text: v.trim() }));
+      if (vars.length > 0) tplComponents.push({ type: 'body', parameters: vars });
+    }
+    body.template = {
+      name: templateName,
+      language: { code: imageCaption || 'en_US' },
+      ...(tplComponents.length > 0 ? { components: tplComponents } : {})
+    };
   }
 
   return axios.post(url, body, { headers, timeout: 10000 });
@@ -889,6 +903,8 @@ app.post('/api/meta-templates', auth, async (req, res) => {
   if (header) {
     if (header.type === 'text') {
       components.push({ type: 'HEADER', format: 'TEXT', text: header.text });
+    } else if (header.type === 'IMAGE' && header.imageUrl) {
+      components.push({ type: 'HEADER', format: 'IMAGE', example: { header_url: [header.imageUrl] } });
     } else if (['IMAGE','VIDEO','DOCUMENT'].includes(header.type)) {
       components.push({ type: 'HEADER', format: header.type });
     }

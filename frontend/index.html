@@ -493,10 +493,25 @@ tr:hover td{background:#fafafa}
             </div>
           </div>
           <div id="tab-template" class="hidden">
-            <div class="alert alert-warn">⚠️ Sirf Meta-approved templates hi kaam karde aa. Meta Business Manager mein approve karwao pehle.</div>
+            <div class="alert alert-warn">⚠️ Sirf Meta-approved templates hi kaam karde aa. Pehle <strong>WA Approval</strong> page te banao te approve karwao.</div>
+            <div class="form-row">
+              <div class="field">
+                <label>Template Name *</label>
+                <input type="text" id="template-name" placeholder="diwali_offer_2025" />
+              </div>
+              <div class="field">
+                <label>Language Code</label>
+                <input type="text" id="template-lang" placeholder="en_US" value="en_US" />
+              </div>
+            </div>
             <div class="field">
-              <label>Template Name</label>
-              <input type="text" id="template-name" placeholder="hello_world" />
+              <label>Header Image URL <span style="font-weight:400;color:var(--muted)">(agar template mein image header hai)</span></label>
+              <input type="url" id="template-image-url" placeholder="https://example.com/offer.jpg" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px" />
+            </div>
+            <div class="field">
+              <label>Body Variables <span style="font-weight:400;color:var(--muted)">({{1}}, {{2}} ki values — || naal alag karo)</span></label>
+              <input type="text" id="template-vars" placeholder="John || 31 Dec || 20%" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px" />
+              <p style="font-size:11px;color:var(--muted);margin-top:4px">Example: "John || 31 Dec" → {{1}}=John, {{2}}=31 Dec</p>
             </div>
           </div>
         </div>
@@ -1239,7 +1254,12 @@ tr:hover td{background:#fafafa}
 
     <div id="mt-header-text-row" class="field hidden" style="margin-bottom:14px">
       <label>Header Text (max 60 chars)</label>
-      <input type="text" id="mt-header-text" maxlength="60" placeholder="Special Offer!" />
+      <input type="text" id="mt-header-text" maxlength="60" placeholder="Special Offer!" oninput="updateMetaPreview()" />
+    </div>
+    <div id="mt-header-image-row" class="field hidden" style="margin-bottom:14px">
+      <label>Header Image URL * <span style="font-weight:400;color:var(--muted)">(publicly accessible link)</span></label>
+      <input type="url" id="mt-header-image-url" placeholder="https://example.com/offer.jpg" oninput="updateMetaPreview()" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px" />
+      <p style="font-size:11px;color:var(--muted);margin-top:4px">💡 Image publicly accessible honi chahidi hai. Meta isko verify karda hai approval ke waqt.</p>
     </div>
 
     <div class="field" style="margin-bottom:6px">
@@ -1644,6 +1664,11 @@ async function startCampaign() {
     const tName = document.getElementById('template-name').value.trim();
     if(!tName) { toast('Template naam likho', 'error'); return; }
     body.templateName = tName;
+    body.imageCaption = document.getElementById('template-lang').value.trim() || 'en_US'; // language code
+    const tImgUrl = document.getElementById('template-image-url').value.trim();
+    if(tImgUrl) body.imageUrl = tImgUrl;
+    const tVars = document.getElementById('template-vars').value.trim();
+    if(tVars) body.messageText = tVars; // variables passed as || separated
   }
   btn.innerHTML = '<div class="spinner"></div> Campaign start ho rahi hai...'; btn.disabled = true;
   try {
@@ -2066,6 +2091,8 @@ function openMetaTplModal() {
   document.getElementById('mt-header-type').value = '';
   document.getElementById('mt-header-text').value = '';
   document.getElementById('mt-header-text-row').classList.add('hidden');
+  document.getElementById('mt-header-image-row').classList.add('hidden');
+  document.getElementById('mt-header-image-url').value = '';
   document.getElementById('mt-buttons-list').innerHTML = '';
   document.getElementById('mt-submit-result').classList.add('hidden');
   metaBtnCount = 0;
@@ -2075,6 +2102,7 @@ function closeMetaTplModal() { document.getElementById('meta-tpl-modal').classLi
 
 function toggleMetaHeader(val) {
   document.getElementById('mt-header-text-row').classList.toggle('hidden', val !== 'text');
+  document.getElementById('mt-header-image-row').classList.toggle('hidden', val !== 'IMAGE');
   updateMetaPreview();
 }
 
@@ -2113,7 +2141,10 @@ function updateMetaPreview() {
   const fEl = document.getElementById('mt-preview-footer');
   const btnsEl = document.getElementById('mt-preview-btns');
 
+  const imgUrl = document.getElementById('mt-header-image-url')?.value;
   if(headerType === 'text' && headerText) { hEl.textContent = headerText; hEl.style.display = 'block'; }
+  else if(headerType === 'IMAGE' && imgUrl) { hEl.innerHTML = `<img src="${imgUrl}" style="width:100%;border-radius:6px;max-height:160px;object-fit:cover" onerror="this.style.display='none'">`; hEl.style.display = 'block'; }
+  else if(headerType === 'IMAGE') { hEl.innerHTML = `<div style="background:#ddd;border-radius:6px;height:100px;display:flex;align-items:center;justify-content:center;color:#999;font-size:13px">🖼️ Image yahan dikhegi</div>`; hEl.style.display = 'block'; }
   else if(headerType) { hEl.innerHTML = `<span style="color:var(--muted);font-style:italic">[${headerType} Header]</span>`; hEl.style.display = 'block'; }
   else { hEl.style.display = 'none'; }
 
@@ -2143,13 +2174,16 @@ async function submitMetaTemplate() {
   const footer = document.getElementById('mt-footer').value.trim();
   const headerType = document.getElementById('mt-header-type').value;
   const headerText = document.getElementById('mt-header-text').value.trim();
+  const headerImageUrl = document.getElementById('mt-header-image-url').value.trim();
 
   if(!name) { toast('Template naam zaroori hai', 'error'); return; }
   if(!bodyText) { toast('Body text zaroori hai', 'error'); return; }
+  if(headerType === 'IMAGE' && !headerImageUrl) { toast('Image URL zaroori hai IMAGE header layi', 'error'); return; }
 
   // Build header
   let header = null;
   if(headerType === 'text' && headerText) header = { type: 'text', text: headerText };
+  else if(headerType === 'IMAGE') header = { type: 'IMAGE', imageUrl: headerImageUrl };
   else if(headerType) header = { type: headerType };
 
   // Build buttons
