@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="pa">
+<html lang="en">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>WA Bulk Sender v2</title>
+<title>WA Bulk Sender Pro</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -91,6 +91,53 @@ a{color:var(--gd);text-decoration:none}
 .toast{background:#323232;color:#fff;padding:12px 18px;border-radius:8px;font-size:13px;display:flex;align-items:center;gap:8px;animation:slideIn .2s ease;max-width:320px;pointer-events:none}
 .toast.success{background:#2e7d32}.toast.error{background:#c62828}
 @keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+
+/* HAMBURGER MENU */
+.hamburger{display:none;flex-direction:column;gap:5px;cursor:pointer;padding:6px;border:none;background:none}
+.hamburger span{width:22px;height:2px;background:#fff;border-radius:2px;transition:all .3s}
+.hamburger.open span:nth-child(1){transform:rotate(45deg) translate(5px,5px)}
+.hamburger.open span:nth-child(2){opacity:0}
+.hamburger.open span:nth-child(3){transform:rotate(-45deg) translate(5px,-5px)}
+.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:49}
+.sidebar-overlay.show{display:block}
+
+/* RESPONSIVE */
+@media(max-width:768px){
+  :root{--sidebar:260px}
+  .hamburger{display:flex}
+  .sidebar{position:fixed;top:56px;left:-270px;height:calc(100vh - 56px);z-index:50;transition:left .3s ease;box-shadow:4px 0 20px rgba(0,0,0,.15)}
+  .sidebar.mobile-open{left:0}
+  .main{flex-direction:column}
+  .content{padding:16px!important;max-width:100%!important}
+  .stats-grid{grid-template-columns:repeat(2,1fr)!important}
+  .form-row{flex-direction:column!important}
+  .flow-list-grid{grid-template-columns:1fr!important}
+  .page-header-row{flex-direction:column!important;gap:10px}
+  .flow-editor-header{flex-direction:column!important;align-items:flex-start!important}
+  .card{padding:14px!important}
+  .modal-box,.modal{width:95vw!important;max-width:95vw!important;margin:10px auto}
+  .modal-overlay{padding:10px}
+  .chat-list-panel{width:100%!important;height:auto!important;position:relative!important}
+  .chat-window{display:none}
+  .chat-window.mobile-active{display:flex!important}
+  .nav-right .nav-avatar-name{display:none}
+  table{font-size:12px}
+  table th,table td{padding:8px 6px!important}
+  .btn{font-size:13px}
+  .tab-row{flex-wrap:wrap!important;gap:4px!important}
+  .tab-btn{flex:1;min-width:80px;font-size:12px!important;padding:7px 8px!important}
+  .flow-canvas{padding:0 0 20px!important}
+  .flow-node{max-width:100%!important}
+  .flow-arrow{max-width:100%!important}
+  .send-contact-list-wrap{max-height:220px!important}
+}
+@media(max-width:480px){
+  .stats-grid{grid-template-columns:1fr 1fr!important}
+  .login-card{width:95vw!important;padding:28px 20px!important}
+  .nav-left span.nav-title{display:none}
+  .page-header h2{font-size:17px}
+  .btn-logout span{display:none}
+}
 
 /* LOGIN */
 #login-page{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--gdd) 0%,var(--gd) 100%)}
@@ -328,7 +375,7 @@ tr:hover td{background:#fafafa}
     <div class="login-brand">
       <div class="login-logo">📱</div>
       <h1>WA Bulk Sender</h1>
-      <p>Apne account mein login karo</p>
+      <p>Login to your account</p>
     </div>
     <div class="form-group">
       <label>Email</label>
@@ -338,7 +385,7 @@ tr:hover td{background:#fafafa}
       <label>Password</label>
       <input type="password" id="li-pass" value="admin123" placeholder="••••••••" />
     </div>
-    <button class="btn-primary" id="li-btn" onclick="doLogin()">🔐 Login Karo</button>
+    <button class="btn-primary" id="li-btn" onclick="doLogin()">🔐 Login</button>
     <p class="login-hint">Demo: admin@example.com / admin123</p>
   </div>
 </div>
@@ -348,25 +395,29 @@ tr:hover td{background:#fafafa}
   <!-- NAV -->
   <nav class="nav">
     <div class="nav-left">
+      <button class="hamburger" id="hamburger-btn" onclick="toggleMobileMenu()" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
       <div class="nav-logo-icon">📱</div>
-      WA Bulk Sender <span style="font-size:11px;opacity:.7;font-weight:400;margin-left:4px">v2.0</span>
+      <span class="nav-title">WA Bulk Sender</span> <span style="font-size:11px;opacity:.7;font-weight:400;margin-left:4px">Pro</span>
     </div>
     <div class="nav-right">
       <span id="nav-unread-wrap" class="hidden"><span class="unread-badge" id="nav-unread">0</span></span>
       <div class="nav-avatar" id="nav-initials">AD</div>
-      <span id="nav-name">Admin</span>
-      <button class="btn-logout" onclick="doLogout()">⎋ Logout</button>
+      <span id="nav-name" class="nav-avatar-name">Admin</span>
+      <button class="btn-logout" onclick="doLogout()">⎋ <span>Logout</span></button>
     </div>
   </nav>
 
+  <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeMobileMenu()"></div>
   <div class="main">
     <!-- SIDEBAR -->
-    <aside class="sidebar">
+    <aside class="sidebar" id="main-sidebar">
       <div class="nav-item active" onclick="showPage('dashboard',this)" data-page="dashboard">
         <span class="icon">📊</span> Dashboard
       </div>
       <div class="nav-item" onclick="showPage('send',this)" data-page="send">
-        <span class="icon">📤</span> Message Bhejo
+        <span class="icon">📤</span> Send Message
       </div>
       <div class="sidebar-divider"></div>
       <div class="sidebar-label">Manage</div>
@@ -410,11 +461,11 @@ tr:hover td{background:#fafafa}
       <div id="page-dashboard">
         <div class="page-header">
           <h2>Dashboard</h2>
-          <p>Campaign overview te live stats</p>
+          <p>Campaign overview and live stats</p>
         </div>
         <div class="stats-grid" id="stats-grid">
           <div class="stat"><div class="stat-icon si-b">👥</div><div class="stat-val" id="s-contacts">—</div><div class="stat-lbl">Total Contacts</div></div>
-          <div class="stat"><div class="stat-icon si-g">✅</div><div class="stat-val" id="s-sent">—</div><div class="stat-lbl">Messages Gaye</div></div>
+          <div class="stat"><div class="stat-icon si-g">✅</div><div class="stat-val" id="s-sent">—</div><div class="stat-lbl">Messages Sent</div></div>
           <div class="stat"><div class="stat-icon si-r">❌</div><div class="stat-val" id="s-failed">—</div><div class="stat-lbl">Failed Messages</div></div>
           <div class="stat"><div class="stat-icon si-a">🔥</div><div class="stat-val" id="s-active">—</div><div class="stat-lbl">Active Campaigns</div></div>
         </div>
@@ -425,7 +476,7 @@ tr:hover td{background:#fafafa}
         <div class="card">
           <div class="card-title">🕐 Recent Campaigns</div>
           <div id="dash-campaigns">
-            <div class="empty"><div class="empty-icon">📭</div><p>Abhi koi campaign nahi hai</p></div>
+            <div class="empty"><div class="empty-icon">📭</div><p>No campaigns yet</p></div>
           </div>
         </div>
       </div>
@@ -433,15 +484,15 @@ tr:hover td{background:#fafafa}
       <!-- SEND MESSAGE -->
       <div id="page-send" class="hidden">
         <div class="page-header">
-          <h2>Message Bhejo</h2>
-          <p>Bulk WhatsApp messages bhejo – contacts pehle se hone chahide</p>
+          <h2>Send Message</h2>
+          <p>Send bulk WhatsApp messages to your contacts</p>
         </div>
 
         <div class="card">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
-            <div class="card-title" style="margin:0">📁 Step 1: Contacts Select Karo</div>
+            <div class="card-title" style="margin:0">📁 Step 1: Select Contacts</div>
             <div style="display:flex;gap:8px;flex-wrap:wrap">
-              <button class="btn btn-outline btn-sm" onclick="document.getElementById('quick-excel').click()">📊 Excel Import</button>
+              <button class="btn btn-outline btn-sm" onclick="document.getElementById('quick-excel').click()">📊 Import Excel</button>
               <button class="btn btn-outline btn-sm" onclick="selectAllSendContacts()">✅ Select All</button>
               <button class="btn btn-outline btn-sm" onclick="deselectAllSendContacts()">☐ Deselect All</button>
             </div>
@@ -451,21 +502,21 @@ tr:hover td{background:#fafafa}
             <span id="send-selected-count" style="font-size:13px;font-weight:600;color:var(--gdd);white-space:nowrap">0 selected</span>
           </div>
           <div id="send-contact-list" style="max-height:280px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:4px">
-            <div class="empty" style="padding:20px"><div class="empty-icon">👥</div><p>Contacts load ho rahe hain...</p></div>
+            <div class="empty" style="padding:20px"><div class="empty-icon">👥</div><p>Loading contacts......</p></div>
           </div>
           <input type="file" id="quick-excel" accept=".xlsx,.xls,.csv" class="hidden" onchange="quickImport(this)" />
           <div id="quick-import-result" class="hidden" style="margin-top:10px"></div>
         </div>
 
         <div class="card">
-          <div class="card-title">📝 Step 2: Template ya Custom Message</div>
+          <div class="card-title">📝 Step 2: Message / Template</div>
           <div id="send-template-row" style="margin-bottom:12px">
-            <label style="font-size:12px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:6px">Saved Template Use Karo (optional)</label>
+            <label style="font-size:12px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:6px">Use Saved Template (optional)</label>
             <div style="display:flex;gap:8px">
               <select id="send-tpl-select" style="flex:1;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;background:#fff" onchange="applyTemplate(this.value)">
-                <option value="">— Template select karo —</option>
+                <option value="">— Select a template —</option>
               </select>
-              <button class="btn btn-outline btn-sm" onclick="showPage('templates',document.querySelector('[data-page=templates]'))">+ Naya</button>
+              <button class="btn btn-outline btn-sm" onclick="showPage('templates',document.querySelector('[data-page=templates]'))">+ New</button>
             </div>
           </div>
           <div class="tab-row">
@@ -476,7 +527,7 @@ tr:hover td{background:#fafafa}
           <div id="tab-text">
             <div class="field">
               <label>Message Text</label>
-              <textarea id="msg-text" placeholder="Sat Sri Akal! Saanu khushi hai...&#10;&#10;Variables: {{name}} {{phone}}" rows="5"></textarea>
+              <textarea id="msg-text" placeholder="Hello! We are happy to announce...&#10;&#10;Variables: {{name}} {{phone}}" rows="5"></textarea>
             </div>
             <p style="font-size:12px;color:var(--muted);margin-top:6px">💡 <strong>{{name}}</strong> ta contact da naam, <strong>{{phone}}</strong> ta number auto-fill ho jaye</p>
           </div>
@@ -493,7 +544,7 @@ tr:hover td{background:#fafafa}
             </div>
           </div>
           <div id="tab-template" class="hidden">
-            <div class="alert alert-warn">⚠️ Sirf Meta-approved templates hi kaam karde aa. Pehle <strong>WA Approval</strong> page te banao te approve karwao.</div>
+            <div class="alert alert-warn">⚠️ Only Meta-approved templates work. Pehle <strong>WA Approval</strong> page te banao te approve karwao.</div>
             <div class="form-row">
               <div class="field">
                 <label>Template Name *</label>
@@ -505,8 +556,16 @@ tr:hover td{background:#fafafa}
               </div>
             </div>
             <div class="field">
-              <label>Header Image URL <span style="font-weight:400;color:var(--muted)">(agar template mein image header hai)</span></label>
+              <label>Header Image <span style="font-weight:400;color:var(--muted)">(agar template mein image header hai)</span></label>
+              <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap">
+                <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('tpl-img-file').click()">📁 Image Upload Karo</button>
+                <span id="tpl-img-upload-status" style="font-size:12px;color:var(--muted)">Ya URL paste karo</span>
+              </div>
+              <input type="file" id="tpl-img-file" accept="image/*" class="hidden" onchange="uploadTemplateImage(this)" />
               <input type="url" id="template-image-url" placeholder="https://example.com/offer.jpg" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px" />
+              <div id="tpl-img-preview" style="margin-top:8px;display:none">
+                <img id="tpl-img-thumb" src="" style="max-height:100px;border-radius:8px;border:1px solid var(--border)" />
+              </div>
             </div>
             <div class="field">
               <label>Body Variables <span style="font-weight:400;color:var(--muted)">({{1}}, {{2}} ki values — || naal alag karo)</span></label>
@@ -521,18 +580,18 @@ tr:hover td{background:#fafafa}
           <div class="form-row">
             <div class="field">
               <label>Campaign Name *</label>
-              <input type="text" id="camp-name" placeholder="Diwali Offer 2025" />
+              <input type="text" id="camp-name" placeholder="My Campaign 2025" />
             </div>
             <div class="field">
-              <label>Schedule (khaali = abhi)</label>
+              <label>Schedule (empty = now)</label>
               <input type="datetime-local" id="camp-schedule" />
             </div>
             <div class="field">
-              <label>Delay Between Messages (seconds)</label>
+              <label>Delay Between Messages (sec)</label>
               <input type="number" id="camp-delay" value="3" min="1" max="60" />
             </div>
             <div class="field">
-              <label>Daily Limit (max msgs/day)</label>
+              <label>Daily Limit (max/day)</label>
               <input type="number" id="camp-limit" value="1000" min="1" />
             </div>
           </div>
@@ -540,7 +599,7 @@ tr:hover td{background:#fafafa}
 
         <div id="send-result" class="hidden" style="margin-bottom:14px"></div>
         <button class="btn btn-green" id="send-btn" onclick="startCampaign()" style="font-size:15px;padding:13px 28px">
-          🚀 Campaign Start Karo
+          🚀 Start Campaign
         </button>
       </div>
 
@@ -553,7 +612,7 @@ tr:hover td{background:#fafafa}
           <div class="chat-list-header">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
               <h3>💬 Inbox</h3>
-              <button class="btn btn-green btn-sm" onclick="openNewChatModal()">+ Naya Chat</button>
+              <button class="btn btn-green btn-sm" onclick="openNewChatModal()">+ New Chat</button>
             </div>
             <div class="chat-search">
               <span>🔍</span>
@@ -561,7 +620,7 @@ tr:hover td{background:#fafafa}
             </div>
           </div>
           <div class="chat-threads" id="chat-threads">
-            <div class="empty" style="padding:30px 20px"><div class="empty-icon">💬</div><p>Abhi koi chat nahi</p></div>
+            <div class="empty" style="padding:30px 20px"><div class="empty-icon">💬</div><p>No chats yet</p></div>
           </div>
         </div>
 
@@ -569,9 +628,9 @@ tr:hover td{background:#fafafa}
         <div class="chat-window" id="chat-window">
           <div class="chat-window-empty" id="chat-empty-state">
             <div style="font-size:60px;opacity:.3">💬</div>
-            <div style="font-size:16px;font-weight:500;color:var(--muted)">Koi conversation select karo</div>
-            <div style="font-size:13px;color:var(--muted)">Ya naya chat shuru karo</div>
-            <button class="btn btn-green btn-sm" onclick="openNewChatModal()" style="margin-top:8px">+ Naya Chat</button>
+            <div style="font-size:16px;font-weight:500;color:var(--muted)">Select a conversation</div>
+            <div style="font-size:13px;color:var(--muted)">or start a new chat</div>
+            <button class="btn btn-green btn-sm" onclick="openNewChatModal()" style="margin-top:8px">+ New Chat</button>
           </div>
           <div id="chat-active" class="hidden" style="display:flex;flex-direction:column;height:100%">
             <div class="chat-header">
@@ -602,7 +661,7 @@ tr:hover td{background:#fafafa}
             <h2>Message Templates</h2>
             <p>Saved templates – campaigns te chat mein quick use karo</p>
           </div>
-          <button class="btn btn-green" onclick="openTplModal()">+ Naya Template</button>
+          <button class="btn btn-green" onclick="openTplModal()">+ New Template</button>
         </div>
 
         <div class="cat-filter" id="cat-filter">
@@ -615,7 +674,7 @@ tr:hover td{background:#fafafa}
         </div>
 
         <div id="tpl-grid" class="tpl-grid">
-          <div class="empty" style="grid-column:1/-1;padding:40px 20px"><div class="empty-icon">📝</div><p>Koi template nahi. Upar + Naya Template te click karo.</p></div>
+          <div class="empty" style="grid-column:1/-1;padding:40px 20px"><div class="empty-icon">📝</div><p>Koi template nahi. Upar + New Template te click karo.</p></div>
         </div>
       </div>
 
@@ -666,7 +725,7 @@ tr:hover td{background:#fafafa}
           <div style="display:flex;gap:8px;flex-wrap:wrap">
             <button class="btn btn-outline btn-sm" onclick="openAddContactModal()">➕ Add Contact</button>
             <button class="btn btn-outline btn-sm" onclick="if(confirm('Saare contacts delete karne hai?')) clearContacts()">🗑️ Clear All</button>
-            <button class="btn btn-green btn-sm" onclick="document.getElementById('import-file').click()">📊 Excel Import</button>
+            <button class="btn btn-green btn-sm" onclick="document.getElementById('import-file').click()">📊 Import Excel</button>
             <input type="file" id="import-file" accept=".xlsx,.xls,.csv" class="hidden" onchange="handleExcelUpload(this)" />
           </div>
         </div>
@@ -724,7 +783,7 @@ tr:hover td{background:#fafafa}
           <div class="page-header-row">
             <div class="page-header">
               <h2>🔀 Flow Builder</h2>
-              <p>Multi-step conversation flows — keyword naal trigger, nodes naal guide karo users nu</p>
+              <p>Multi-step conversation flows triggered by keywords</p>
             </div>
             <button class="btn btn-green" onclick="openCreateFlowModal()" style="margin-top:4px">+ New Flow</button>
           </div>
@@ -732,11 +791,11 @@ tr:hover td{background:#fafafa}
             💡 <strong>Flows > Chatbot Rules</strong> — jado flow trigger hoga, chatbot rules skip ho jande ne. Flow vich Message → Condition → Message chain banao.
           </div>
           <div class="flow-list-grid" id="flow-list-grid">
-            <div class="empty" style="grid-column:1/-1"><div class="empty-icon">🔀</div><p>Abhi koi flow nahi. Pehla flow banao!</p></div>
+            <div class="empty" style="grid-column:1/-1"><div class="empty-icon">🔀</div><p>No flows yet. Create your first flow!!</p></div>
           </div>
           <div class="card" style="margin-top:8px">
             <div class="card-title">👥 Active User Sessions <span class="session-badge" id="sessions-count">0</span></div>
-            <div id="sessions-list" style="font-size:13px;color:var(--muted)">Koi active session nahi</div>
+            <div id="sessions-list" style="font-size:13px;color:var(--muted)">No active sessions</div>
           </div>
         </div>
 
@@ -780,7 +839,7 @@ tr:hover td{background:#fafafa}
       <div id="create-flow-modal" class="modal-overlay hidden" onclick="if(event.target===this)closeCreateFlowModal()">
         <div class="modal-box" style="max-width:460px">
           <div class="modal-header">
-            <div class="modal-title" id="create-flow-modal-title">New Flow Banao</div>
+            <div class="modal-title" id="create-flow-modal-title">Create New Flow</div>
             <button class="modal-close" onclick="closeCreateFlowModal()">✕</button>
           </div>
           <div style="padding:20px;display:flex;flex-direction:column;gap:14px">
@@ -790,7 +849,7 @@ tr:hover td{background:#fafafa}
               <input type="text" id="flow-name-input" placeholder="e.g. Welcome Flow, Price Inquiry" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px">
             </div>
             <div class="field">
-              <label>Trigger Keyword * <span style="font-weight:400;color:var(--muted)">(user eh likhega tad flow start hoga)</span></label>
+              <label>Trigger Keyword * <span style="font-weight:400;color:var(--muted)">(message that triggers this flow)</span></label>
               <input type="text" id="flow-trigger-input" placeholder="e.g. hello, start, menu, price" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px" oninput="this.value=this.value.toLowerCase()">
             </div>
             <div class="field">
@@ -799,7 +858,7 @@ tr:hover td{background:#fafafa}
             </div>
             <div style="display:flex;gap:10px;justify-content:flex-end">
               <button class="btn btn-outline" onclick="closeCreateFlowModal()">Cancel</button>
-              <button class="btn btn-green" onclick="saveFlowMeta()">💾 Save Karo</button>
+              <button class="btn btn-green" onclick="saveFlowMeta()">💾 Save</button>
             </div>
           </div>
         </div>
@@ -817,33 +876,33 @@ tr:hover td{background:#fafafa}
             <div class="field">
               <label>Node Type *</label>
               <select id="node-type-select" onchange="onNodeTypeChange()" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px">
-                <option value="message">💬 Message — text bhejo</option>
-                <option value="condition">🔀 Condition — user reply check karo</option>
-                <option value="end">🛑 End — flow khatam karo</option>
+                <option value="message">💬 Message — send text</option>
+                <option value="condition">🔀 Condition — check user reply</option>
+                <option value="end">🛑 End — finish the flow</option>
               </select>
             </div>
             <!-- Message fields -->
             <div id="node-message-fields">
               <div class="field">
                 <label>Message Text *</label>
-                <textarea id="node-text" rows="4" placeholder="Jo message user nu jaega... Variables: {{name}}" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;resize:vertical;font-size:13px"></textarea>
+                <textarea id="node-text" rows="4" placeholder="Message to send... Variables: {{name}}" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;resize:vertical;font-size:13px"></textarea>
               </div>
               <div class="field">
-                <label>Delay (seconds) <span style="font-weight:400;color:var(--muted)">(pehle wait karo)</span></label>
+                <label>Delay (seconds) <span style="font-weight:400;color:var(--muted)">(wait before sending)</span></label>
                 <input type="number" id="node-delay" value="0" min="0" max="60" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px">
               </div>
             </div>
             <!-- Condition fields -->
             <div id="node-condition-fields" class="hidden">
               <div class="alert alert-info" style="font-size:12px;margin-bottom:10px">
-                User da jawab (reply) check karo te alag-alag nodes te bhejo. Har condition add karo neeche.
+                Check user reply and route to different nodes. Add conditions below.
               </div>
               <div id="conditions-editor" style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px"></div>
-              <button class="btn btn-outline btn-sm" onclick="addConditionRow()">+ Condition Add Karo</button>
+              <button class="btn btn-outline btn-sm" onclick="addConditionRow()">+ Add Condition</button>
               <div class="field" style="margin-top:12px">
-                <label>Fallback Node <span style="font-weight:400;color:var(--muted)">(koi match na hove tad)</span></label>
+                <label>Fallback Node <span style="font-weight:400;color:var(--muted)">(when no condition matches)</span></label>
                 <select id="node-fallback-select" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px">
-                  <option value="">— End (koi fallback nahi) —</option>
+                  <option value="">— End (no fallback) —</option>
                 </select>
               </div>
             </div>
@@ -851,21 +910,21 @@ tr:hover td{background:#fafafa}
             <div id="node-end-fields" class="hidden">
               <div class="field">
                 <label>Goodbye Message <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
-                <textarea id="node-end-text" rows="2" placeholder="Shukriya! Dobara zaroor aana 😊" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;resize:vertical;font-size:13px"></textarea>
+                <textarea id="node-end-text" rows="2" placeholder="Shukriya! Thank you, visit again 😊" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;resize:vertical;font-size:13px"></textarea>
               </div>
             </div>
             <!-- Next node for message type -->
             <div id="node-next-field">
               <div class="field">
-                <label>Next Node <span style="font-weight:400;color:var(--muted)">(eh message bhej ke kidhar jaana hai)</span></label>
+                <label>Next Node <span style="font-weight:400;color:var(--muted)">(where to go after this message)</span></label>
                 <select id="node-next-select" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px">
-                  <option value="">— End (flow khatam) —</option>
+                  <option value="">— End (finish flow) —</option>
                 </select>
               </div>
             </div>
             <div style="display:flex;gap:10px;justify-content:flex-end">
               <button class="btn btn-outline" onclick="closeNodeModal()">Cancel</button>
-              <button class="btn btn-green" onclick="saveNode()">💾 Node Save Karo</button>
+              <button class="btn btn-green" onclick="saveNode()">💾 Save Node</button>
             </div>
           </div>
         </div>
@@ -876,7 +935,7 @@ tr:hover td{background:#fafafa}
         <div class="page-header-row">
           <div class="page-header">
             <h2>🤖 Chatbot</h2>
-            <p>Keyword-based auto-reply system — incoming messages te automatic jawab</p>
+            <p>Keyword-based auto-reply for incoming messages</p>
           </div>
           <div style="display:flex;align-items:center;gap:12px;margin-top:4px">
             <span style="font-size:13px;color:var(--muted)" id="bot-status-label">Bot: OFF</span>
@@ -892,18 +951,18 @@ tr:hover td{background:#fafafa}
           <div class="card-title">⚙️ Bot Settings</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
             <div class="field">
-              <label>Welcome Message <span style="font-weight:400;color:var(--muted)">(naye contact lai)</span></label>
+              <label>Welcome Message <span style="font-weight:400;color:var(--muted)">(for new contacts)</span></label>
               <textarea id="bot-welcome" rows="3" placeholder="Sat Sri Akal! Main WA Bot aan. Apna sawaal likho..." style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;resize:vertical;font-size:13px"></textarea>
-              <p style="font-size:11px;color:var(--muted);margin-top:4px">Pehli baar message karne wale contacts nu eh bheja jaanda hai</p>
+              <p style="font-size:11px;color:var(--muted);margin-top:4px">Sent to contacts who message for the first time</p>
             </div>
             <div class="field">
               <label>Fallback Message <span style="font-weight:400;color:var(--muted)">(koi rule match na hove)</span></label>
               <textarea id="bot-fallback" rows="3" placeholder="Sorry, main eh samajh nahi sakeya. Please team naal contact karo..." style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;resize:vertical;font-size:13px"></textarea>
-              <p style="font-size:11px;color:var(--muted);margin-top:4px">Jado koi rule match nahi karda tad eh message janda hai</p>
+              <p style="font-size:11px;color:var(--muted);margin-top:4px">Sent when no rule matches</p>
             </div>
           </div>
           <div style="margin-top:12px">
-            <button class="btn btn-green" onclick="saveBotSettings()">💾 Settings Save Karo</button>
+            <button class="btn btn-green" onclick="saveBotSettings()">💾 Save Settings</button>
           </div>
         </div>
 
@@ -911,10 +970,10 @@ tr:hover td{background:#fafafa}
         <div class="card">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
             <div class="card-title" style="margin:0">📋 Auto-Reply Rules</div>
-            <button class="btn btn-green" onclick="openRuleModal()">+ Rule Add Karo</button>
+            <button class="btn btn-green" onclick="openRuleModal()">+ Add Rule</button>
           </div>
           <div id="bot-rules-list">
-            <div class="empty"><div class="empty-icon">🤖</div><p>Abhi koi rule nahi. Pehla rule add karo!</p></div>
+            <div class="empty"><div class="empty-icon">🤖</div><p>No rules yet. Add your first rule!!</p></div>
           </div>
         </div>
 
@@ -949,23 +1008,23 @@ tr:hover td{background:#fafafa}
             <div class="field">
               <label>Keyword / Phrase *</label>
               <input type="text" id="rule-keyword" placeholder="e.g. hello, price, help, order" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px">
-              <p style="font-size:11px;color:var(--muted);margin-top:4px">Jo word incoming message vich hona chahida (case-insensitive)</p>
+              <p style="font-size:11px;color:var(--muted);margin-top:4px">Word that must appear in message (case-insensitive)</p>
             </div>
             <div class="field">
               <label>Match Type</label>
               <select id="rule-match-type" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px">
-                <option value="contains">Contains — message vich keyword hove</option>
-                <option value="exact">Exact — poora message match hove</option>
-                <option value="startsWith">Starts With — message eh naal shuru hove</option>
+                <option value="contains">Contains — keyword appears in message</option>
+                <option value="exact">Exact — entire message must match</option>
+                <option value="startsWith">Starts With — message begins with keyword</option>
               </select>
             </div>
             <div class="field">
               <label>Auto-Reply Message *</label>
-              <textarea id="rule-reply" rows="4" placeholder="Eh reply bheja jaanda hai jado keyword match hove..." style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;resize:vertical;font-size:13px"></textarea>
+              <textarea id="rule-reply" rows="4" placeholder="This reply is sent when keyword matches..." style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;resize:vertical;font-size:13px"></textarea>
             </div>
             <div style="display:flex;gap:10px;justify-content:flex-end;padding-top:4px">
               <button class="btn btn-outline" onclick="closeRuleModal()">Cancel</button>
-              <button class="btn btn-green" onclick="saveRule()">💾 Save Karo</button>
+              <button class="btn btn-green" onclick="saveRule()">💾 Save</button>
             </div>
           </div>
         </div>
@@ -975,12 +1034,12 @@ tr:hover td{background:#fafafa}
       <div id="page-settings" class="hidden">
         <div class="page-header">
           <h2>Settings</h2>
-          <p>WhatsApp Business API configure karo</p>
+          <p>Configure WhatsApp Business API</p>
         </div>
         <div class="card">
           <div class="card-title">📱 WhatsApp Business API (Meta)</div>
           <div class="alert alert-info">
-            💡 <strong>Setup karna hai?</strong> <a href="https://developers.facebook.com/docs/whatsapp/cloud-api" target="_blank">developers.facebook.com</a> te jaake WhatsApp Cloud API setup karo.
+            💡 <strong>Need to set up?</strong> <a href="https://developers.facebook.com/docs/whatsapp/cloud-api" target="_blank">developers.facebook.com</a> te jaake WhatsApp Cloud API setup karo.
           </div>
           <div class="form-row">
             <div class="field">
@@ -1005,15 +1064,15 @@ tr:hover td{background:#fafafa}
             </div>
             <div class="field">
               <label>Webhook Verify Token</label>
-              <input type="text" id="s-webhook" placeholder="aapda-secret-token" />
+              <input type="text" id="s-webhook" placeholder="your-secret-token" />
             </div>
           </div>
           <div class="alert alert-info" style="margin-top:4px">
             🔗 <strong>Webhook URL:</strong> <code id="webhook-url-display" style="user-select:all;background:rgba(0,0,0,.05);padding:2px 6px;border-radius:4px"></code>
           </div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
-            <button class="btn btn-outline" onclick="testConnection()">🔌 Connection Test Karo</button>
-            <button class="btn btn-green" onclick="saveSettings()">💾 Settings Save Karo</button>
+            <button class="btn btn-outline" onclick="testConnection()">🔌 Test Connection</button>
+            <button class="btn btn-green" onclick="saveSettings()">💾 Save Settings</button>
           </div>
           <div id="conn-result" class="hidden" style="margin-top:12px"></div>
         </div>
@@ -1021,7 +1080,7 @@ tr:hover td{background:#fafafa}
           <div class="card-title">👤 Account Settings</div>
           <div class="form-row">
             <div class="field">
-              <label>Naam</label>
+              <label>Name</label>
               <input type="text" id="s-name" placeholder="Admin" />
             </div>
             <div class="field">
@@ -1029,16 +1088,16 @@ tr:hover td{background:#fafafa}
               <input type="email" id="s-email" placeholder="admin@example.com" />
             </div>
             <div class="field form-full">
-              <label>Naya Password (khaali rakho jeker change nahi karna)</label>
+              <label>New Password (leave blank to keep current)</label>
               <input type="password" id="s-password" placeholder="••••••••" />
             </div>
           </div>
-          <button class="btn btn-green" onclick="saveProfile()">💾 Profile Save Karo</button>
+          <button class="btn btn-green" onclick="saveProfile()">💾 Save Profile</button>
         </div>
         <div class="card">
           <div class="card-title">ℹ️ System Info</div>
           <div style="font-size:13px;display:flex;flex-direction:column;gap:8px;color:var(--muted)">
-            <div>📦 Version: <strong style="color:var(--text)">WA Bulk Sender v2.0</strong></div>
+            <div>📦 Version: <strong style="color:var(--text)">WA Bulk Sender Pro</strong></div>
             <div>🔗 Backend: <strong style="color:var(--text)" id="api-url-display">—</strong></div>
             <div>🛡️ Default Login: <strong style="color:var(--text)">admin@example.com / admin123</strong></div>
           </div>
@@ -1071,7 +1130,7 @@ tr:hover td{background:#fafafa}
       <input type="hidden" id="tpl-edit-id" />
       <div class="form-row">
         <div class="field">
-          <label>Template Naam *</label>
+          <label>Template Name *</label>
           <input type="text" id="tpl-name" placeholder="Diwali Offer" />
         </div>
         <div class="field">
@@ -1165,7 +1224,7 @@ tr:hover td{background:#fafafa}
         <input type="text" id="add-phone" placeholder="+91 98765 43210" />
       </div>
       <div class="field" style="margin-bottom:14px">
-        <label>Naam (optional)</label>
+        <label>Name (optional)</label>
         <input type="text" id="add-name" placeholder="Gurpreet Singh" />
       </div>
       <div style="display:flex;gap:8px;justify-content:flex-end">
@@ -1187,7 +1246,7 @@ tr:hover td{background:#fafafa}
       <div class="field" style="margin-bottom:14px">
         <label>Template Choose Karo</label>
         <select id="chat-tpl-select" onchange="previewChatTpl(this.value)" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px">
-          <option value="">— Template select karo —</option>
+          <option value="">— Select a template —</option>
         </select>
       </div>
       <div id="chat-tpl-preview" class="hidden" style="background:var(--bg);border-radius:8px;padding:12px;margin-bottom:14px;font-size:13px;line-height:1.5;white-space:pre-wrap"></div>
@@ -1209,7 +1268,7 @@ tr:hover td{background:#fafafa}
 
     <div class="alert alert-info" style="margin-bottom:16px">
       💡 Template name <strong>lowercase + underscore</strong> mein hona chahida (jaise: <code>diwali_offer_2025</code>).
-      Meta 24-48 ghante mein approve karda hai.
+      Meta approves in 24-48 hours.
     </div>
 
     <div class="form-row">
@@ -1243,7 +1302,7 @@ tr:hover td{background:#fafafa}
       <div class="field">
         <label>Header Type (optional)</label>
         <select id="mt-header-type" onchange="toggleMetaHeader(this.value)">
-          <option value="">— Koi Header Nahi —</option>
+          <option value="">— No Header —</option>
           <option value="text">📝 Text Header</option>
           <option value="IMAGE">🖼️ Image</option>
           <option value="VIDEO">🎥 Video</option>
@@ -1257,9 +1316,17 @@ tr:hover td{background:#fafafa}
       <input type="text" id="mt-header-text" maxlength="60" placeholder="Special Offer!" oninput="updateMetaPreview()" />
     </div>
     <div id="mt-header-image-row" class="field hidden" style="margin-bottom:14px">
-      <label>Header Image URL * <span style="font-weight:400;color:var(--muted)">(publicly accessible link)</span></label>
-      <input type="url" id="mt-header-image-url" placeholder="https://example.com/offer.jpg" oninput="updateMetaPreview()" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px" />
-      <p style="font-size:11px;color:var(--muted);margin-top:4px">💡 Image publicly accessible honi chahidi hai. Meta isko verify karda hai approval ke waqt.</p>
+      <label>Header Image *</label>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('mt-header-img-file').click()">📁 Image Upload Karo</button>
+        <span id="mt-header-img-status" style="font-size:12px;color:var(--muted)">Ya URL paste karo</span>
+      </div>
+      <input type="file" id="mt-header-img-file" accept="image/*" class="hidden" onchange="uploadMetaHeaderImage(this)" />
+      <input type="url" id="mt-header-image-url" placeholder="https://example.com/offer.jpg" oninput="updateMetaPreview()" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;margin-top:8px" />
+      <div id="mt-header-img-preview" style="margin-top:8px;display:none">
+        <img id="mt-header-img-thumb" src="" style="max-height:120px;border-radius:8px;border:1px solid var(--border)" />
+      </div>
+      <p style="font-size:11px;color:var(--muted);margin-top:4px">💡 Image upload karo ya direct URL paste karo</p>
     </div>
 
     <div class="field" style="margin-bottom:6px">
@@ -1279,7 +1346,7 @@ tr:hover td{background:#fafafa}
     <div style="margin-bottom:14px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
         <label style="font-size:12px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">Buttons (optional, max 3)</label>
-        <button class="btn btn-outline btn-sm" onclick="addMetaBtn()">+ Button Add Karo</button>
+        <button class="btn btn-outline btn-sm" onclick="addMetaBtn()">+ Add Button</button>
       </div>
       <div id="mt-buttons-list" style="display:flex;flex-direction:column;gap:8px"></div>
     </div>
@@ -1298,7 +1365,7 @@ tr:hover td{background:#fafafa}
     <div id="mt-submit-result" class="hidden" style="margin-bottom:12px"></div>
     <div style="display:flex;gap:8px;justify-content:flex-end">
       <button class="btn btn-outline" onclick="closeMetaTplModal()">Cancel</button>
-      <button class="btn btn-green" id="mt-submit-btn" onclick="submitMetaTemplate()">📤 Meta nu Submit Karo</button>
+      <button class="btn btn-green" id="mt-submit-btn" onclick="submitMetaTemplate()">📤 Submit to Meta</button>
     </div>
   </div>
 </div>
@@ -1381,7 +1448,7 @@ async function doLogin() {
     initApp();
     toast('Login successful!', 'success');
   } catch(e) { toast(e.message, 'error'); }
-  finally { btn.innerHTML = '🔐 Login Karo'; btn.disabled = false; }
+  finally { btn.innerHTML = '🔐 Login'; btn.disabled = false; }
 }
 
 function doLogout() {
@@ -1404,8 +1471,24 @@ function initApp() {
   statsInterval = setInterval(loadStats, 10000);
 }
 
+// ── MOBILE MENU ────────────────────────────────────────────────────────────────
+function toggleMobileMenu() {
+  const sidebar = document.getElementById('main-sidebar');
+  const overlay = document.getElementById('sidebar-overlay');
+  const hamburger = document.getElementById('hamburger-btn');
+  sidebar.classList.toggle('mobile-open');
+  overlay.classList.toggle('show');
+  hamburger.classList.toggle('open');
+}
+function closeMobileMenu() {
+  document.getElementById('main-sidebar').classList.remove('mobile-open');
+  document.getElementById('sidebar-overlay').classList.remove('show');
+  document.getElementById('hamburger-btn').classList.remove('open');
+}
+
 // ── NAVIGATION ─────────────────────────────────────────────────────────────────
 function showPage(name, el) {
+  closeMobileMenu(); // close menu on mobile when page changes
   document.querySelectorAll('[id^="page-"]').forEach(p => p.classList.add('hidden'));
   document.getElementById('page-' + name).classList.remove('hidden');
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
@@ -1489,7 +1572,7 @@ async function loadSendContacts() {
 function renderSendContactList() {
   const el = document.getElementById('send-contact-list');
   if(!filteredSendContacts.length) {
-    el.innerHTML = '<div class="empty" style="padding:20px"><div class="empty-icon">👥</div><p>Koi contact nahi mila</p></div>';
+    el.innerHTML = '<div class="empty" style="padding:20px"><div class="empty-icon">👥</div><p>No contacts found</p></div>';
     updateSendSelectedCount();
     return;
   }
@@ -1568,7 +1651,7 @@ async function handleExcelUpload(input) {
   const fd = new FormData(); fd.append('file', file);
   try {
     const d = await api('POST', '/contacts/import', fd, true);
-    toast(d.added + ' contacts import hoe!', 'success');
+    toast(d.added + ' contacts imported!', 'success');
     loadContacts(); loadStats();
   } catch(e) { toast(e.message, 'error'); }
   input.value = '';
@@ -1583,7 +1666,7 @@ async function quickImport(input) {
     r.innerHTML = `<div class="alert alert-success">✅ <strong>${d.added} contacts</strong> import hoe! ${d.skipped?d.skipped+' skip.':''}</div>`;
     r.classList.remove('hidden');
     loadStats(); loadContactCount();
-    toast(d.added + ' contacts import hoe!', 'success');
+    toast(d.added + ' contacts imported!', 'success');
   } catch(e) {
     r.innerHTML = `<div class="alert alert-error">❌ ${e.message}</div>`;
     r.classList.remove('hidden');
@@ -1608,7 +1691,46 @@ async function handleImageUpload(input) {
       ? 'http://localhost:5000' : window.location.origin;
     uploadedImageUrl = baseUrl + d.url;
     status.textContent = '✅ ' + d.filename + ' upload hoi!';
-    toast('Image upload successful!', 'success');
+    toast('Image uploaded successfully!', 'success');
+  } catch(e) { status.textContent = '❌ Upload fail'; toast(e.message, 'error'); }
+  input.value = '';
+}
+
+// WA Approval page — header image upload
+async function uploadMetaHeaderImage(input) {
+  const file = input.files[0]; if(!file) return;
+  const status = document.getElementById('mt-header-img-status');
+  status.textContent = '⏳ Upload ho raha hai...';
+  const fd = new FormData(); fd.append('image', file);
+  try {
+    const d = await api('POST', '/upload-image', fd, true);
+    const baseUrl = (window.location.protocol==='file:'||window.location.hostname==='localhost') ? 'http://localhost:5000' : window.location.origin;
+    const fullUrl = baseUrl + d.url;
+    document.getElementById('mt-header-image-url').value = fullUrl;
+    document.getElementById('mt-header-img-thumb').src = fullUrl;
+    document.getElementById('mt-header-img-preview').style.display = 'block';
+    status.textContent = '✅ ' + d.filename;
+    updateMetaPreview();
+    toast('Image uploaded!', 'success');
+  } catch(e) { status.textContent = '❌ Upload fail'; toast(e.message, 'error'); }
+  input.value = '';
+}
+
+// Send Message page — template header image upload
+async function uploadTemplateImage(input) {
+  const file = input.files[0]; if(!file) return;
+  const status = document.getElementById('tpl-img-upload-status');
+  status.textContent = '⏳ Upload ho raha hai...';
+  const fd = new FormData(); fd.append('image', file);
+  try {
+    const d = await api('POST', '/upload-image', fd, true);
+    const baseUrl = (window.location.protocol==='file:'||window.location.hostname==='localhost') ? 'http://localhost:5000' : window.location.origin;
+    const fullUrl = baseUrl + d.url;
+    document.getElementById('template-image-url').value = fullUrl;
+    document.getElementById('tpl-img-thumb').src = fullUrl;
+    document.getElementById('tpl-img-preview').style.display = 'block';
+    status.textContent = '✅ ' + d.filename;
+    toast('Image uploaded!', 'success');
   } catch(e) { status.textContent = '❌ Upload fail'; toast(e.message, 'error'); }
   input.value = '';
 }
@@ -1637,7 +1759,7 @@ function applyTemplate(id) {
     s.textContent = uploadedImageUrl ? '✅ Image set from template' : ''; s.classList.toggle('hidden', !uploadedImageUrl);
     document.getElementById('img-caption').value = tpl.imageCaption || '';
   } else { document.getElementById('template-name').value = tpl.templateName || ''; }
-  toast('Template "' + tpl.name + '" apply hoya!', 'success');
+  toast('Template "' + tpl.name + '" applied!', 'success');
 }
 
 async function startCampaign() {
@@ -1646,23 +1768,23 @@ async function startCampaign() {
   const scheduledAt = document.getElementById('camp-schedule').value;
   const btn = document.getElementById('send-btn');
   const result = document.getElementById('send-result');
-  if(!name) { toast('Campaign naam zaroori hai', 'error'); return; }
+  if(!name) { toast('Campaign name is required', 'error'); return; }
 
   // Selected contacts check
   const selectedPhones = getSelectedPhones();
-  if(selectedPhones.length === 0) { toast('Kam az kam ek contact select karo!', 'error'); return; }
+  if(selectedPhones.length === 0) { toast('Please select at least one contact!', 'error'); return; }
   let body = { name, messageType: msgType, delaySeconds: delay, scheduledAt: scheduledAt || null, selectedPhones };
   if(msgType === 'text') {
     const txt = document.getElementById('msg-text').value.trim();
-    if(!txt) { toast('Message text likho', 'error'); return; }
+    if(!txt) { toast('Please enter message text', 'error'); return; }
     body.messageText = txt;
   } else if(msgType === 'image') {
-    if(!uploadedImageUrl) { toast('Pehle image upload karo', 'error'); return; }
+    if(!uploadedImageUrl) { toast('Please upload an image first', 'error'); return; }
     body.imageUrl = uploadedImageUrl;
     body.imageCaption = document.getElementById('img-caption').value.trim();
   } else {
     const tName = document.getElementById('template-name').value.trim();
-    if(!tName) { toast('Template naam likho', 'error'); return; }
+    if(!tName) { toast('Please enter template name', 'error'); return; }
     body.templateName = tName;
     body.imageCaption = document.getElementById('template-lang').value.trim() || 'en_US'; // language code
     const tImgUrl = document.getElementById('template-image-url').value.trim();
@@ -1683,7 +1805,7 @@ async function startCampaign() {
     result.classList.remove('hidden');
     toast(e.message, 'error');
   }
-  btn.innerHTML = '🚀 Campaign Start Karo'; btn.disabled = false;
+  btn.innerHTML = '🚀 Start Campaign'; btn.disabled = false;
 }
 
 let searchDebounce;
@@ -1695,7 +1817,7 @@ async function loadContacts() {
   tbody.innerHTML = '<tr><td colspan="6" class="table-empty">⏳ Load ho raha hai...</td></tr>';
   try {
     const d = await api('GET', `/contacts?search=${encodeURIComponent(contactSearch)}&status=${contactStatusFilter}&page=${contactPage}&limit=20`);
-    if(!d.contacts.length) { tbody.innerHTML = '<tr><td colspan="6" class="table-empty">📭 Koi contact nahi mila</td></tr>'; document.getElementById('contact-pages').innerHTML=''; return; }
+    if(!d.contacts.length) { tbody.innerHTML = '<tr><td colspan="6" class="table-empty">📭 No contacts found</td></tr>'; document.getElementById('contact-pages').innerHTML=''; return; }
     tbody.innerHTML = d.contacts.map((c,i) => `
       <tr>
         <td style="color:var(--muted)">${(contactPage-1)*20+i+1}</td>
@@ -1839,7 +1961,7 @@ async function saveSettings() {
       webhookToken: document.getElementById('s-webhook').value.trim(),
       apiVersion: document.getElementById('s-api-ver').value
     });
-    toast('Settings save ho gayi!', 'success');
+    toast('Settings saved!', 'success');
   } catch(e) { toast(e.message, 'error'); }
 }
 
@@ -1855,7 +1977,7 @@ async function testConnection() {
     el.innerHTML = `<div class="alert alert-error">❌ ${e.message}</div>`;
     el.classList.remove('hidden');
   }
-  btn.textContent = '🔌 Connection Test Karo'; btn.disabled = false;
+  btn.textContent = '🔌 Test Connection'; btn.disabled = false;
 }
 
 async function saveProfile() {
@@ -1876,7 +1998,7 @@ function renderTemplates() {
   const grid = document.getElementById('tpl-grid');
   let list = allTemplates;
   if(tplCatFilter) list = list.filter(t => t.category === tplCatFilter);
-  if(!list.length) { grid.innerHTML = '<div class="empty" style="grid-column:1/-1;padding:40px 20px"><div class="empty-icon">📝</div><p>Koi template nahi. Upar + Naya Template te click karo.</p></div>'; return; }
+  if(!list.length) { grid.innerHTML = '<div class="empty" style="grid-column:1/-1;padding:40px 20px"><div class="empty-icon">📝</div><p>Koi template nahi. Upar + New Template te click karo.</p></div>'; return; }
   grid.innerHTML = list.map(t => `
     <div class="tpl-card">
       <div class="tpl-card-top">
@@ -1936,8 +2058,8 @@ async function saveTpl() {
   };
   if(!body.name) { toast('Template naam zaroori hai', 'error'); return; }
   try {
-    if(id) { await api('PUT', '/templates/'+id, body); toast('Template update hoya!','success'); }
-    else { await api('POST', '/templates', body); toast('Template save hoya!','success'); }
+    if(id) { await api('PUT', '/templates/'+id, body); toast('Template updated!','success'); }
+    else { await api('POST', '/templates', body); toast('Template saved!','success'); }
     closeTplModal(); await loadTemplates();
   } catch(e) { toast(e.message, 'error'); }
 }
@@ -1952,7 +2074,7 @@ function useTplInCampaign(id) {
 }
 function loadTemplatesForSend() {
   const sel = document.getElementById('send-tpl-select');
-  sel.innerHTML = '<option value="">— Template select karo —</option>';
+  sel.innerHTML = '<option value="">— Select a template —</option>';
   allTemplates.forEach(t => { const o = document.createElement('option'); o.value = t.id; o.textContent = t.name + ' (' + catLabel(t.category) + ')'; sel.appendChild(o); });
 }
 
@@ -2217,10 +2339,10 @@ async function submitMetaTemplate() {
     // Reload meta templates
     setTimeout(() => loadMetaTemplates(), 1000);
   } catch(e) {
-    resultEl.innerHTML = `<div class="alert alert-error">❌ ${e.message}<br><small>Template name unique hona chahida, lowercase_underscore format mein.</small></div>`;
+    resultEl.innerHTML = `<div class="alert alert-error">❌ ${e.message}<br><small>Template name unique hona chahida, in lowercase_underscore format.</small></div>`;
     resultEl.classList.remove('hidden');
   }
-  btn.innerHTML = '📤 Meta nu Submit Karo'; btn.disabled = false;
+  btn.innerHTML = '📤 Submit to Meta'; btn.disabled = false;
 }
 
 // ═══════════════════════════════════════════════════════
@@ -2236,7 +2358,7 @@ async function loadChatThreads() {
 
 function renderThreads(threads) {
   const el = document.getElementById('chat-threads');
-  if(!threads.length) { el.innerHTML = '<div class="empty" style="padding:30px 20px"><div class="empty-icon">💬</div><p>Abhi koi chat nahi</p></div>'; return; }
+  if(!threads.length) { el.innerHTML = '<div class="empty" style="padding:30px 20px"><div class="empty-icon">💬</div><p>No chats yet</p></div>'; return; }
   el.innerHTML = threads.map(t => {
     const initials = (t.name||t.phone||'?').slice(0,2).toUpperCase();
     const isActive = t.phone === activeChatPhone;
@@ -2316,17 +2438,17 @@ function closeNewChatModal() { document.getElementById('new-chat-modal').classLi
 async function startNewChat() {
   const phone = document.getElementById('new-chat-phone').value.trim();
   const text = document.getElementById('new-chat-message').value.trim();
-  if(!phone || !text) { toast('Phone te message dono bharo', 'error'); return; }
+  if(!phone || !text) { toast('Please enter phone and message', 'error'); return; }
   try {
     await api('POST', '/chats/' + encodeURIComponent(phone) + '/send', { text, messageType: 'text' });
     closeNewChatModal(); await loadChatThreads(); openChat(phone, '');
-    toast('Message bhej ditta!', 'success');
+    toast('Message sent!', 'success');
   } catch(e) { toast(e.message, 'error'); }
 }
 
 function openChatSendModal() {
   const sel = document.getElementById('chat-tpl-select');
-  sel.innerHTML = '<option value="">— Template select karo —</option>';
+  sel.innerHTML = '<option value="">— Select a template —</option>';
   allTemplates.filter(t => t.messageType === 'text').forEach(t => { const o = document.createElement('option'); o.value = t.id; o.textContent = t.name; sel.appendChild(o); });
   document.getElementById('chat-tpl-preview').classList.add('hidden');
   document.getElementById('chat-tpl-modal').classList.remove('hidden');
@@ -2367,7 +2489,7 @@ async function loadFlows() {
 function renderFlowList() {
   const el = document.getElementById('flow-list-grid');
   if (!allFlows.length) {
-    el.innerHTML = '<div class="empty" style="grid-column:1/-1"><div class="empty-icon">🔀</div><p>Abhi koi flow nahi. Pehla flow banao!</p></div>';
+    el.innerHTML = '<div class="empty" style="grid-column:1/-1"><div class="empty-icon">🔀</div><p>No flows yet. Create your first flow!!</p></div>';
     return;
   }
   el.innerHTML = allFlows.map(f => `
@@ -2397,7 +2519,7 @@ async function loadFlowSessions() {
     const sessions = await api('GET', '/flows/sessions/all');
     const phones = Object.keys(sessions);
     document.getElementById('sessions-count').textContent = phones.length;
-    if (!phones.length) { document.getElementById('sessions-list').innerHTML = '<span style="color:var(--muted)">Koi active session nahi</span>'; return; }
+    if (!phones.length) { document.getElementById('sessions-list').innerHTML = '<span style="color:var(--muted)">No active sessions</span>'; return; }
     const rows = phones.map(phone => {
       const s = sessions[phone];
       const flow = allFlows.find(f => f.id === s.flowId);
@@ -2418,7 +2540,7 @@ async function loadFlowSessions() {
 async function clearSession(phone) {
   try {
     await api('DELETE', '/flows/sessions/' + encodeURIComponent(phone));
-    toast('Session clear ho gaya', 'success');
+    toast('Session cleared', 'success');
     loadFlowSessions();
   } catch(e) { toast(e.message, 'error'); }
 }
@@ -2426,7 +2548,7 @@ async function clearSession(phone) {
 // ── CREATE / EDIT FLOW META ───────────────────────────────
 function openCreateFlowModal(id) {
   document.getElementById('edit-flow-id').value = id || '';
-  document.getElementById('create-flow-modal-title').textContent = id ? 'Flow Edit Karo' : 'New Flow Banao';
+  document.getElementById('create-flow-modal-title').textContent = id ? 'Flow Edit Karo' : 'Create New Flow';
   if (id) {
     const f = allFlows.find(f => f.id === id);
     if (f) { document.getElementById('flow-name-input').value = f.name; document.getElementById('flow-trigger-input').value = f.triggerKeyword; document.getElementById('flow-desc-input').value = f.description || ''; }
@@ -2446,7 +2568,7 @@ async function saveFlowMeta() {
   const name = document.getElementById('flow-name-input').value.trim();
   const triggerKeyword = document.getElementById('flow-trigger-input').value.trim();
   const description = document.getElementById('flow-desc-input').value.trim();
-  if (!name || !triggerKeyword) { toast('Name te trigger zaroori hain', 'error'); return; }
+  if (!name || !triggerKeyword) { toast('Name and trigger keyword are required', 'error'); return; }
   try {
     if (id) {
       const updated = await api('PUT', '/flows/' + id, { name, triggerKeyword, description });
@@ -2457,11 +2579,11 @@ async function saveFlowMeta() {
         document.getElementById('flow-editor-title').textContent = updated.name;
         document.getElementById('flow-editor-kw-badge').textContent = updated.triggerKeyword;
       }
-      toast('Flow update ho gaya!', 'success');
+      toast('Flow updated!', 'success');
     } else {
       const newFlow = await api('POST', '/flows', { name, triggerKeyword, description });
       allFlows.push(newFlow);
-      toast('Flow ban gaya! Hune nodes add karo.', 'success');
+      toast('Flow created! Hune nodes add karo.', 'success');
       closeCreateFlowModal();
       renderFlowList();
       openFlowEditor(newFlow.id);
@@ -2482,7 +2604,7 @@ async function toggleFlow(id, active) {
       document.getElementById('flow-active-btn').innerHTML = active ? '⏸ Pause' : '▶ Activate';
     }
     renderFlowList();
-    toast(active ? 'Flow active ho gaya!' : 'Flow pause ho gaya!', 'success');
+    toast(active ? 'Flow activated!' : 'Flow paused!', 'success');
   } catch(e) { toast(e.message, 'error'); }
 }
 
@@ -2492,7 +2614,7 @@ async function deleteFlow(id) {
     await api('DELETE', '/flows/' + id);
     allFlows = allFlows.filter(f => f.id !== id);
     renderFlowList();
-    toast('Flow delete ho gaya!', 'success');
+    toast('Flow deleted!', 'success');
   } catch(e) { toast(e.message, 'error'); }
 }
 
@@ -2558,7 +2680,7 @@ function renderFlowCanvas() {
           <div class="flow-node-conditions">
             ${(node.conditions||[]).map(c=>`
               <div class="condition-row">
-                <span>User likhega:</span>
+                <span>User replies:</span>
                 <span class="condition-kw">${escHtml(c.match)}</span>
                 <span class="condition-arrow">→</span>
                 <span class="condition-target">${nodeMap[c.nextNodeId]?`Node ${currentFlow.nodes.findIndex(n=>n.id===c.nextNodeId)+1}`:'End'}</span>
@@ -2621,7 +2743,7 @@ function onNodeTypeChange() {
 
 function populateNodeSelects(excludeId, selectedNext, selectedFallback) {
   const nodes = (currentFlow?.nodes||[]).filter(n => n.id !== excludeId);
-  const opts = '<option value="">— End (flow khatam) —</option>' + nodes.map((n,i)=>`<option value="${n.id}">${i+1}. ${n.type}: ${(n.text||n.type).slice(0,30)}</option>`).join('');
+  const opts = '<option value="">— End (finish flow) —</option>' + nodes.map((n,i)=>`<option value="${n.id}">${i+1}. ${n.type}: ${(n.text||n.type).slice(0,30)}</option>`).join('');
   document.getElementById('node-next-select').innerHTML = opts;
   document.getElementById('node-fallback-select').innerHTML = opts;
   if (selectedNext) document.getElementById('node-next-select').value = selectedNext;
@@ -2678,11 +2800,11 @@ async function saveNode() {
   try {
     if (editId) {
       currentFlow = await api('PUT', '/flows/' + currentFlow.id + '/nodes/' + editId, nodeData);
-      toast('Node update ho gaya!', 'success');
+      toast('Node updated!', 'success');
     } else {
       const result = await api('POST', '/flows/' + currentFlow.id + '/nodes', nodeData);
       currentFlow = result.flow;
-      toast('Node add ho gaya!', 'success');
+      toast('Node added!', 'success');
     }
     closeNodeModal();
     renderFlowCanvas();
@@ -2694,7 +2816,7 @@ async function deleteNode(nodeId) {
   try {
     currentFlow = await api('DELETE', '/flows/' + currentFlow.id + '/nodes/' + nodeId);
     renderFlowCanvas();
-    toast('Node delete ho gaya!', 'success');
+    toast('Node deleted!', 'success');
   } catch(e) { toast(e.message, 'error'); }
 }
 
@@ -2719,7 +2841,7 @@ async function toggleBot(enabled) {
     const d = await api('PUT', '/chatbot/settings', { enabled });
     botData = d.chatbot;
     document.getElementById('bot-status-label').textContent = enabled ? 'Bot: ON ✅' : 'Bot: OFF';
-    toast(enabled ? 'Chatbot ON ho gaya!' : 'Chatbot OFF ho gaya!', 'success');
+    toast(enabled ? 'Chatbot is now ON!' : 'Chatbot is now OFF!', 'success');
   } catch(e) {
     document.getElementById('bot-enabled-toggle').checked = !enabled;
     toast(e.message, 'error');
@@ -2732,14 +2854,14 @@ async function saveBotSettings() {
   try {
     const d = await api('PUT', '/chatbot/settings', { welcomeMsg, fallbackMsg });
     botData = d.chatbot;
-    toast('Settings save ho gayi!', 'success');
+    toast('Settings saved!', 'success');
   } catch(e) { toast(e.message, 'error'); }
 }
 
 function renderRules(rules) {
   const el = document.getElementById('bot-rules-list');
   if (!rules.length) {
-    el.innerHTML = '<div class="empty"><div class="empty-icon">🤖</div><p>Abhi koi rule nahi. Pehla rule add karo!</p></div>';
+    el.innerHTML = '<div class="empty"><div class="empty-icon">🤖</div><p>No rules yet. Add your first rule!!</p></div>';
     return;
   }
   const matchLabel = { contains: 'Contains', exact: 'Exact Match', startsWith: 'Starts With' };
@@ -2790,8 +2912,8 @@ async function saveRule() {
   const keyword = document.getElementById('rule-keyword').value.trim();
   const matchType = document.getElementById('rule-match-type').value;
   const reply = document.getElementById('rule-reply').value.trim();
-  if (!keyword) { toast('Keyword zaroori hai', 'error'); return; }
-  if (!reply) { toast('Reply zaroori hai', 'error'); return; }
+  if (!keyword) { toast('Keyword is required', 'error'); return; }
+  if (!reply) { toast('Reply is required', 'error'); return; }
   try {
     if (id) {
       const updated = await api('PUT', '/chatbot/rules/' + id, { keyword, matchType, reply });
@@ -2803,7 +2925,7 @@ async function saveRule() {
     }
     renderRules(botData.rules);
     closeRuleModal();
-    toast(id ? 'Rule update ho gaya!' : 'Rule add ho gaya!', 'success');
+    toast(id ? 'Rule updated!' : 'Rule added!', 'success');
   } catch(e) { toast(e.message, 'error'); }
 }
 
@@ -2813,7 +2935,7 @@ async function toggleRule(id, active) {
     const idx = botData.rules.findIndex(r => r.id === id);
     if (idx !== -1) botData.rules[idx] = updated;
     renderRules(botData.rules);
-    toast(active ? 'Rule active ho gaya!' : 'Rule pause ho gaya!', 'success');
+    toast(active ? 'Rule activated!' : 'Rule paused!', 'success');
   } catch(e) { toast(e.message, 'error'); }
 }
 
@@ -2823,7 +2945,7 @@ async function deleteRule(id) {
     await api('DELETE', '/chatbot/rules/' + id);
     botData.rules = botData.rules.filter(r => r.id !== id);
     renderRules(botData.rules);
-    toast('Rule delete ho gaya!', 'success');
+    toast('Rule deleted!', 'success');
   } catch(e) { toast(e.message, 'error'); }
 }
 
