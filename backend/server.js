@@ -75,6 +75,33 @@ app.put('/api/settings', auth, (req, res) => {
   res.json({ success: true });
 });
 
+// Wizard: POST alias for settings save
+app.post('/api/settings', auth, (req, res) => {
+  const db = getDB();
+  db.settings = { ...db.settings, ...req.body };
+  saveDB(db);
+  res.json({ success: true });
+});
+
+// Wizard: send test message
+app.post('/api/wizard/test-message', auth, async (req, res) => {
+  const db = getDB();
+  const { phoneNumberId, accessToken, apiVersion } = db.settings;
+  if (!phoneNumberId || !accessToken) return res.status(400).json({ error: 'API credentials not configured in settings' });
+  const { phone } = req.body;
+  if (!phone) return res.status(400).json({ error: 'Phone number required' });
+  try {
+    const url = `https://graph.facebook.com/${apiVersion}/${phoneNumberId}/messages`;
+    await axios.post(url,
+      { messaging_product: 'whatsapp', to: phone.replace(/\D/g, ''), type: 'text', text: { body: '✅ WhatsApp API connected successfully! Your WA Bulk Sender Pro is ready to use. 🚀' } },
+      { headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' }, timeout: 12000 }
+    );
+    res.json({ success: true });
+  } catch(e) {
+    res.status(400).json({ error: e.response?.data?.error?.message || e.message });
+  }
+});
+
 app.post('/api/settings/test', auth, async (req, res) => {
   const db = getDB();
   const { phoneNumberId, accessToken, apiVersion } = db.settings;

@@ -92,6 +92,47 @@ a{color:var(--gd);text-decoration:none}
 .toast.success{background:#2e7d32}.toast.error{background:#c62828}
 @keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
 
+/* SETUP WIZARD */
+.wizard-progress{display:flex;align-items:center;margin-bottom:32px;overflow-x:auto;padding-bottom:4px}
+.wizard-step-item{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:80px;cursor:pointer;flex:1}
+.wizard-step-circle{width:40px;height:40px;border-radius:50%;border:2px solid var(--border);background:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:var(--muted);transition:all .3s;position:relative;z-index:1}
+.wizard-step-item.done .wizard-step-circle{background:var(--gd);border-color:var(--gd);color:#fff}
+.wizard-step-item.active .wizard-step-circle{background:var(--gdd);border-color:var(--gdd);color:#fff;box-shadow:0 0 0 4px rgba(18,140,126,.2)}
+.wizard-step-label{font-size:11px;color:var(--muted);text-align:center;font-weight:500;white-space:nowrap}
+.wizard-step-item.active .wizard-step-label{color:var(--gdd);font-weight:600}
+.wizard-step-item.done .wizard-step-label{color:var(--gd)}
+.wizard-connector{flex:1;height:2px;background:var(--border);margin:0 -2px;margin-bottom:22px;transition:background .3s;min-width:20px}
+.wizard-connector.done{background:var(--gd)}
+.wizard-panel{display:none}
+.wizard-panel.active{display:block}
+.wizard-card{background:#fff;border:1px solid var(--border);border-radius:16px;padding:28px;margin-bottom:16px}
+.wizard-card-title{font-size:18px;font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:10px}
+.wizard-card-desc{font-size:13px;color:var(--muted);margin-bottom:24px;line-height:1.6}
+.wizard-instruction{background:#f8fafc;border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px}
+.wizard-instruction-step{display:flex;gap:12px;margin-bottom:12px;align-items:flex-start}
+.wizard-instruction-step:last-child{margin-bottom:0}
+.wizard-step-num{width:24px;height:24px;border-radius:50%;background:var(--gdd);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.wizard-instruction-text{font-size:13px;color:var(--text);line-height:1.6}
+.wizard-instruction-text a{color:var(--gdd);font-weight:500}
+.wizard-instruction-text code{background:#e8f5e9;color:var(--gdd);padding:2px 6px;border-radius:4px;font-size:12px}
+.wizard-field{margin-bottom:16px}
+.wizard-field label{display:block;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px}
+.wizard-field input,.wizard-field select,.wizard-field textarea{width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;transition:border-color .2s}
+.wizard-field input:focus,.wizard-field select:focus{outline:none;border-color:var(--gd)}
+.wizard-field .hint{font-size:11px;color:var(--muted);margin-top:5px}
+.wizard-nav{display:flex;justify-content:space-between;align-items:center;margin-top:24px;padding-top:20px;border-top:1px solid var(--border)}
+.wizard-status{padding:12px 16px;border-radius:8px;font-size:13px;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.wizard-status.success{background:#e8f5e9;color:#2e7d32;border:1px solid #a5d6a7}
+.wizard-status.error{background:#ffebee;color:#c62828;border:1px solid #ef9a9a}
+.wizard-status.info{background:#e3f2fd;color:#1565c0;border:1px solid #90caf9}
+.wizard-status.warning{background:#fff8e1;color:#e65100;border:1px solid #ffe082}
+.wizard-complete{text-align:center;padding:40px 20px}
+.wizard-complete-icon{font-size:64px;margin-bottom:16px}
+.wizard-complete h2{font-size:24px;font-weight:700;color:var(--gdd);margin-bottom:8px}
+.wizard-complete p{font-size:14px;color:var(--muted);margin-bottom:24px}
+.copy-btn{background:none;border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;color:var(--gdd);transition:all .15s}
+.copy-btn:hover{background:var(--gdd);color:#fff;border-color:var(--gdd)}
+.webhook-url-box{background:#f8fafc;border:1.5px solid var(--border);border-radius:8px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:13px;word-break:break-all}
 /* HAMBURGER MENU */
 .hamburger{display:none;flex-direction:column;gap:5px;cursor:pointer;padding:6px;border:none;background:none}
 .hamburger span{width:22px;height:2px;background:#fff;border-radius:2px;transition:all .3s}
@@ -449,6 +490,9 @@ tr:hover td{background:#fafafa}
         <span class="icon">📈</span> Reports
       </div>
       <div class="sidebar-divider"></div>
+      <div class="nav-item" onclick="showPage('wizard',this)" data-page="wizard">
+        <span class="icon">🧙</span> Setup Wizard
+      </div>
       <div class="nav-item" onclick="showPage('settings',this)" data-page="settings">
         <span class="icon">⚙️</span> Settings
       </div>
@@ -1030,6 +1074,301 @@ tr:hover td{background:#fafafa}
         </div>
       </div>
 
+      <!-- SETUP WIZARD -->
+      <div id="page-wizard" class="hidden">
+        <div class="page-header-row">
+          <div class="page-header">
+            <h2>🧙 WhatsApp Setup Wizard</h2>
+            <p>Step-by-step guide to connect your WhatsApp Business API</p>
+          </div>
+          <button class="btn btn-outline btn-sm" onclick="resetWizard()" style="margin-top:4px">↺ Start Over</button>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="wizard-progress" id="wizard-progress">
+          <div class="wizard-step-item active" id="wsi-1" onclick="goWizardStep(1)">
+            <div class="wizard-step-circle" id="wsc-1">1</div>
+            <div class="wizard-step-label">Welcome</div>
+          </div>
+          <div class="wizard-connector" id="wcon-1"></div>
+          <div class="wizard-step-item" id="wsi-2" onclick="goWizardStep(2)">
+            <div class="wizard-step-circle" id="wsc-2">2</div>
+            <div class="wizard-step-label">Meta App</div>
+          </div>
+          <div class="wizard-connector" id="wcon-2"></div>
+          <div class="wizard-step-item" id="wsi-3" onclick="goWizardStep(3)">
+            <div class="wizard-step-circle" id="wsc-3">3</div>
+            <div class="wizard-step-label">Phone ID</div>
+          </div>
+          <div class="wizard-connector" id="wcon-3"></div>
+          <div class="wizard-step-item" id="wsi-4" onclick="goWizardStep(4)">
+            <div class="wizard-step-circle" id="wsc-4">4</div>
+            <div class="wizard-step-label">Token</div>
+          </div>
+          <div class="wizard-connector" id="wcon-4"></div>
+          <div class="wizard-step-item" id="wsi-5" onclick="goWizardStep(5)">
+            <div class="wizard-step-circle" id="wsc-5">5</div>
+            <div class="wizard-step-label">Webhook</div>
+          </div>
+          <div class="wizard-connector" id="wcon-5"></div>
+          <div class="wizard-step-item" id="wsi-6" onclick="goWizardStep(6)">
+            <div class="wizard-step-circle" id="wsc-6">6</div>
+            <div class="wizard-step-label">Test & Go!</div>
+          </div>
+        </div>
+
+        <!-- ── STEP 1: WELCOME ── -->
+        <div class="wizard-panel active" id="wizard-step-1">
+          <div class="wizard-card">
+            <div class="wizard-card-title">👋 Welcome to WhatsApp Cloud API Setup</div>
+            <div class="wizard-card-desc">This wizard will guide you through connecting your WhatsApp Business number with Meta's Cloud API. The whole process takes about <strong>15-20 minutes</strong>.</div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:24px">
+              <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:16px;text-align:center">
+                <div style="font-size:28px;margin-bottom:6px">📱</div>
+                <div style="font-weight:600;font-size:13px">WhatsApp Business Number</div>
+                <div style="font-size:12px;color:var(--muted);margin-top:4px">A number registered with WhatsApp Business</div>
+              </div>
+              <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:16px;text-align:center">
+                <div style="font-size:28px;margin-bottom:6px">👤</div>
+                <div style="font-weight:600;font-size:13px">Meta Business Account</div>
+                <div style="font-size:12px;color:var(--muted);margin-top:4px">Verified Meta Business Manager account</div>
+              </div>
+              <div style="background:#fefce8;border:1px solid #fef08a;border-radius:10px;padding:16px;text-align:center">
+                <div style="font-size:28px;margin-bottom:6px">🔑</div>
+                <div style="font-weight:600;font-size:13px">Meta Developer Account</div>
+                <div style="font-size:12px;color:var(--muted);margin-top:4px">Account at developers.facebook.com</div>
+              </div>
+              <div style="background:#fdf4ff;border:1px solid #e9d5ff;border-radius:10px;padding:16px;text-align:center">
+                <div style="font-size:28px;margin-bottom:6px">💳</div>
+                <div style="font-weight:600;font-size:13px">Payment Method</div>
+                <div style="font-size:12px;color:var(--muted);margin-top:4px">Added to Meta Business (for messaging)</div>
+              </div>
+            </div>
+            <div class="wizard-status info">💡 <span>Don't have these yet? Click the links in each step — we'll guide you!</span></div>
+            <div class="wizard-nav">
+              <div></div>
+              <button class="btn btn-green" onclick="goWizardStep(2)">Get Started → </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── STEP 2: META APP ── -->
+        <div class="wizard-panel" id="wizard-step-2">
+          <div class="wizard-card">
+            <div class="wizard-card-title">🔧 Create a Meta App</div>
+            <div class="wizard-card-desc">First, create a Meta App in the developer portal. This app will connect your WhatsApp Business account to this system.</div>
+            <div class="wizard-instruction">
+              <div class="wizard-instruction-step">
+                <div class="wizard-step-num">1</div>
+                <div class="wizard-instruction-text">Go to <a href="https://developers.facebook.com/apps" target="_blank">developers.facebook.com/apps</a> and click <strong>"Create App"</strong></div>
+              </div>
+              <div class="wizard-instruction-step">
+                <div class="wizard-step-num">2</div>
+                <div class="wizard-instruction-text">Select <strong>"Business"</strong> as the app type, then click Next</div>
+              </div>
+              <div class="wizard-instruction-step">
+                <div class="wizard-step-num">3</div>
+                <div class="wizard-instruction-text">Enter your app name (e.g. <code>MyBusiness-WA</code>), select your Business Account, then click <strong>"Create App"</strong></div>
+              </div>
+              <div class="wizard-instruction-step">
+                <div class="wizard-step-num">4</div>
+                <div class="wizard-instruction-text">In the app dashboard, find <strong>WhatsApp</strong> product and click <strong>"Set Up"</strong></div>
+              </div>
+              <div class="wizard-instruction-step">
+                <div class="wizard-step-num">5</div>
+                <div class="wizard-instruction-text">Copy your <strong>App ID</strong> from the top of the dashboard (e.g. <code>1234567890123456</code>)</div>
+              </div>
+            </div>
+            <div class="wizard-field">
+              <label>Meta App ID</label>
+              <input type="text" id="wiz-app-id" placeholder="1234567890123456" />
+              <div class="hint">Found at: developers.facebook.com/apps → Your App → App ID</div>
+            </div>
+            <div class="wizard-field">
+              <label>WABA ID (WhatsApp Business Account ID)</label>
+              <input type="text" id="wiz-waba-id" placeholder="987654321098765" />
+              <div class="hint">Found at: Meta Business Manager → WhatsApp Accounts → Account ID</div>
+            </div>
+            <div id="wiz-step2-status" class="hidden wizard-status"></div>
+            <div class="wizard-nav">
+              <button class="btn btn-outline" onclick="goWizardStep(1)">← Back</button>
+              <button class="btn btn-green" onclick="wizStep2Next()">Next → </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── STEP 3: PHONE NUMBER ID ── -->
+        <div class="wizard-panel" id="wizard-step-3">
+          <div class="wizard-card">
+            <div class="wizard-card-title">📱 Get Your Phone Number ID</div>
+            <div class="wizard-card-desc">Every WhatsApp Business number has a unique Phone Number ID. This is used to send messages through the API.</div>
+            <div class="wizard-instruction">
+              <div class="wizard-instruction-step">
+                <div class="wizard-step-num">1</div>
+                <div class="wizard-instruction-text">Go to your Meta App → <strong>WhatsApp → API Setup</strong></div>
+              </div>
+              <div class="wizard-instruction-step">
+                <div class="wizard-step-num">2</div>
+                <div class="wizard-instruction-text">Under <strong>"From"</strong> dropdown, select your WhatsApp Business phone number</div>
+              </div>
+              <div class="wizard-instruction-step">
+                <div class="wizard-step-num">3</div>
+                <div class="wizard-instruction-text">Below the dropdown you'll see <strong>"Phone number ID"</strong> — copy that value (e.g. <code>123456789012345</code>)</div>
+              </div>
+              <div class="wizard-instruction-step">
+                <div class="wizard-step-num">4</div>
+                <div class="wizard-instruction-text">Also note the <strong>API version</strong> shown (e.g. <code>v20.0</code>)</div>
+              </div>
+            </div>
+            <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:12px;margin-bottom:16px;font-size:12px;color:#92400e">
+              ⚠️ <strong>No phone number yet?</strong> You need to add and verify a WhatsApp Business number in Meta Business Manager first. <a href="https://business.facebook.com/wa/manage/phone-numbers/" target="_blank">Add Phone Number →</a>
+            </div>
+            <div class="wizard-field">
+              <label>Phone Number ID *</label>
+              <input type="text" id="wiz-phone-id" placeholder="123456789012345" />
+              <div class="hint">WhatsApp → API Setup → Phone number ID (NOT the actual phone number)</div>
+            </div>
+            <div class="wizard-field">
+              <label>API Version</label>
+              <select id="wiz-api-ver" style="width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:8px">
+                <option value="v20.0">v20.0 (Latest Stable)</option>
+                <option value="v19.0">v19.0</option>
+                <option value="v18.0">v18.0</option>
+              </select>
+            </div>
+            <div id="wiz-step3-status" class="hidden wizard-status"></div>
+            <div class="wizard-nav">
+              <button class="btn btn-outline" onclick="goWizardStep(2)">← Back</button>
+              <button class="btn btn-green" onclick="wizStep3Next()">Next → </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── STEP 4: ACCESS TOKEN ── -->
+        <div class="wizard-panel" id="wizard-step-4">
+          <div class="wizard-card">
+            <div class="wizard-card-title">🔑 Generate Permanent Access Token</div>
+            <div class="wizard-card-desc">A temporary token expires in 24 hours. We'll help you create a <strong>permanent token</strong> using a System User so messages never stop.</div>
+            <div class="wizard-instruction">
+              <div class="wizard-instruction-step">
+                <div class="wizard-step-num">1</div>
+                <div class="wizard-instruction-text">Go to <a href="https://business.facebook.com/settings/system-users" target="_blank">Meta Business Manager → System Users</a></div>
+              </div>
+              <div class="wizard-instruction-step">
+                <div class="wizard-step-num">2</div>
+                <div class="wizard-instruction-text">Click <strong>"Add"</strong> → Enter name (e.g. <code>WA-Bot-User</code>) → Role: <strong>Admin</strong> → Save</div>
+              </div>
+              <div class="wizard-instruction-step">
+                <div class="wizard-step-num">3</div>
+                <div class="wizard-instruction-text">Click on the system user → <strong>"Generate New Token"</strong> → Select your App</div>
+              </div>
+              <div class="wizard-instruction-step">
+                <div class="wizard-step-num">4</div>
+                <div class="wizard-instruction-text">Select permissions: <code>whatsapp_business_messaging</code>, <code>whatsapp_business_management</code> → Generate</div>
+              </div>
+              <div class="wizard-instruction-step">
+                <div class="wizard-step-num">5</div>
+                <div class="wizard-instruction-text">⚠️ <strong>Copy the token immediately</strong> — it won't be shown again! Starts with <code>EAA...</code></div>
+              </div>
+            </div>
+            <div class="wizard-field">
+              <label>Permanent Access Token *</label>
+              <input type="password" id="wiz-token" placeholder="EAAxxxxxxxxxxxxxx..." />
+              <div class="hint">Starts with "EAA" — keep this secret, never share publicly</div>
+            </div>
+            <div id="wiz-step4-status" class="hidden wizard-status"></div>
+            <div class="wizard-nav">
+              <button class="btn btn-outline" onclick="goWizardStep(3)">← Back</button>
+              <button class="btn btn-green" onclick="wizStep4Next()">Verify Token → </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── STEP 5: WEBHOOK ── -->
+        <div class="wizard-panel" id="wizard-step-5">
+          <div class="wizard-card">
+            <div class="wizard-card-title">🔗 Configure Webhook</div>
+            <div class="wizard-card-desc">Webhook lets WhatsApp send incoming messages to your system in real-time. Copy your webhook URL below and set it in Meta.</div>
+            <div class="wizard-field">
+              <label>Your Webhook URL</label>
+              <div class="webhook-url-box">
+                <span id="wiz-webhook-url" style="font-family:monospace;font-size:12px"></span>
+                <button class="copy-btn" onclick="copyWebhookUrl()">📋 Copy</button>
+              </div>
+            </div>
+            <div class="wizard-field">
+              <label>Verify Token (create your own secret word)</label>
+              <input type="text" id="wiz-verify-token" placeholder="my-secret-token-2025" />
+              <div class="hint">Any random string — you'll enter this in Meta too</div>
+            </div>
+            <div class="wizard-instruction" style="margin-top:16px">
+              <div class="wizard-instruction-step">
+                <div class="wizard-step-num">1</div>
+                <div class="wizard-instruction-text">In Meta App → <strong>WhatsApp → Configuration</strong> → click <strong>"Edit"</strong> next to Webhook</div>
+              </div>
+              <div class="wizard-instruction-step">
+                <div class="wizard-step-num">2</div>
+                <div class="wizard-instruction-text">Paste your <strong>Webhook URL</strong> from above</div>
+              </div>
+              <div class="wizard-instruction-step">
+                <div class="wizard-step-num">3</div>
+                <div class="wizard-instruction-text">Enter your <strong>Verify Token</strong> (same as what you typed above)</div>
+              </div>
+              <div class="wizard-instruction-step">
+                <div class="wizard-step-num">4</div>
+                <div class="wizard-instruction-text">Click <strong>"Verify and Save"</strong> — Meta will send a test request</div>
+              </div>
+              <div class="wizard-instruction-step">
+                <div class="wizard-step-num">5</div>
+                <div class="wizard-instruction-text">Subscribe to <strong>messages</strong> webhook field and click Save</div>
+              </div>
+            </div>
+            <div id="wiz-step5-status" class="hidden wizard-status"></div>
+            <div class="wizard-nav">
+              <button class="btn btn-outline" onclick="goWizardStep(4)">← Back</button>
+              <button class="btn btn-green" onclick="wizStep5Next()">Save & Continue → </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── STEP 6: TEST ── -->
+        <div class="wizard-panel" id="wizard-step-6">
+          <div class="wizard-card">
+            <div class="wizard-card-title">🚀 Test Your Connection</div>
+            <div class="wizard-card-desc">Everything is configured! Let's send a test message to confirm your WhatsApp API is working correctly.</div>
+            <div id="wiz-config-summary" style="background:#f8fafc;border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:20px;font-size:13px">
+              <div style="font-weight:600;margin-bottom:10px">✅ Configuration Summary</div>
+              <div id="wiz-summary-content" style="display:grid;gap:6px"></div>
+            </div>
+            <div class="wizard-field">
+              <label>Send Test Message To (WhatsApp number with country code)</label>
+              <input type="text" id="wiz-test-phone" placeholder="+919876543210" />
+              <div class="hint">Enter a real WhatsApp number to receive the test message</div>
+            </div>
+            <div id="wiz-test-status" class="hidden wizard-status"></div>
+            <div class="wizard-nav">
+              <button class="btn btn-outline" onclick="goWizardStep(5)">← Back</button>
+              <button class="btn btn-green" id="wiz-test-btn" onclick="wizSendTest()">📨 Send Test Message</button>
+            </div>
+          </div>
+
+          <!-- Success State -->
+          <div id="wiz-success" class="wizard-card hidden">
+            <div class="wizard-complete">
+              <div class="wizard-complete-icon">🎉</div>
+              <h2>WhatsApp API Connected!</h2>
+              <p>Your WhatsApp Cloud API is set up and working. You can now send bulk messages, set up chatbots, and manage conversations.</p>
+              <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+                <button class="btn btn-green" onclick="showPage('send',document.querySelector('[data-page=send]'))">📤 Send First Campaign</button>
+                <button class="btn btn-outline" onclick="showPage('chatbot',document.querySelector('[data-page=chatbot]'))">🤖 Setup Chatbot</button>
+                <button class="btn btn-outline" onclick="showPage('contacts',document.querySelector('[data-page=contacts]'))">👥 Import Contacts</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
       <!-- SETTINGS -->
       <div id="page-settings" class="hidden">
         <div class="page-header">
@@ -1471,6 +1810,203 @@ function initApp() {
   statsInterval = setInterval(loadStats, 10000);
 }
 
+// ══════════════════════════════════════════════════════════
+// SETUP WIZARD
+// ══════════════════════════════════════════════════════════
+let wizardStep = 1;
+let wizardData = JSON.parse(localStorage.getItem('wizard_data') || '{}');
+
+function loadWizard() {
+  // Restore saved data
+  if(wizardData.appId) document.getElementById('wiz-app-id').value = wizardData.appId;
+  if(wizardData.wabaId) document.getElementById('wiz-waba-id').value = wizardData.wabaId;
+  if(wizardData.phoneId) document.getElementById('wiz-phone-id').value = wizardData.phoneId;
+  if(wizardData.apiVer) document.getElementById('wiz-api-ver').value = wizardData.apiVer;
+  if(wizardData.token) document.getElementById('wiz-token').value = wizardData.token;
+  if(wizardData.verifyToken) document.getElementById('wiz-verify-token').value = wizardData.verifyToken;
+  // Set webhook URL
+  const baseUrl = (window.location.protocol==='file:'||window.location.hostname==='localhost') ? 'http://localhost:5000' : window.location.origin;
+  document.getElementById('wiz-webhook-url').textContent = baseUrl + '/api/webhook';
+  // Go to last saved step
+  const savedStep = parseInt(wizardData.lastStep) || 1;
+  goWizardStep(savedStep);
+}
+
+function saveWizardData() {
+  localStorage.setItem('wizard_data', JSON.stringify(wizardData));
+}
+
+function goWizardStep(step) {
+  // Validate forward navigation
+  if(step > wizardStep + 1 && step > 1) return;
+  wizardStep = step;
+  // Update panels
+  document.querySelectorAll('.wizard-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('wizard-step-' + step)?.classList.add('active');
+  // Update progress indicators
+  for(let i = 1; i <= 6; i++) {
+    const item = document.getElementById('wsi-' + i);
+    const circle = document.getElementById('wsc-' + i);
+    const connector = document.getElementById('wcon-' + i);
+    if(!item) continue;
+    item.classList.remove('active','done');
+    if(i < step) { item.classList.add('done'); circle.innerHTML = '✓'; }
+    else if(i === step) { item.classList.add('active'); circle.textContent = i; }
+    else { circle.textContent = i; }
+    if(connector) connector.classList.toggle('done', i < step);
+  }
+  wizardData.lastStep = step;
+  saveWizardData();
+  // Update summary on step 6
+  if(step === 6) updateWizardSummary();
+}
+
+function wizStep2Next() {
+  const appId = document.getElementById('wiz-app-id').value.trim();
+  const wabaId = document.getElementById('wiz-waba-id').value.trim();
+  const statusEl = document.getElementById('wiz-step2-status');
+  if(!appId || !wabaId) {
+    showWizStatus('wiz-step2-status', 'error', '❌ Please enter both App ID and WABA ID');
+    return;
+  }
+  if(!/^\d+$/.test(appId) || !/^\d+$/.test(wabaId)) {
+    showWizStatus('wiz-step2-status', 'error', '❌ App ID and WABA ID should contain only numbers');
+    return;
+  }
+  wizardData.appId = appId;
+  wizardData.wabaId = wabaId;
+  saveWizardData();
+  showWizStatus('wiz-step2-status', 'success', '✅ App ID and WABA ID saved!');
+  setTimeout(() => goWizardStep(3), 800);
+}
+
+function wizStep3Next() {
+  const phoneId = document.getElementById('wiz-phone-id').value.trim();
+  const apiVer = document.getElementById('wiz-api-ver').value;
+  if(!phoneId) {
+    showWizStatus('wiz-step3-status', 'error', '❌ Please enter your Phone Number ID');
+    return;
+  }
+  if(!/^\d+$/.test(phoneId)) {
+    showWizStatus('wiz-step3-status', 'error', '❌ Phone Number ID should contain only numbers');
+    return;
+  }
+  wizardData.phoneId = phoneId;
+  wizardData.apiVer = apiVer;
+  saveWizardData();
+  showWizStatus('wiz-step3-status', 'success', '✅ Phone Number ID saved!');
+  setTimeout(() => goWizardStep(4), 800);
+}
+
+async function wizStep4Next() {
+  const token = document.getElementById('wiz-token').value.trim();
+  if(!token) { showWizStatus('wiz-step4-status', 'error', '❌ Please enter your Access Token'); return; }
+  if(!token.startsWith('EAA')) { showWizStatus('wiz-step4-status', 'warning', '⚠️ Token usually starts with "EAA". Please double-check.'); }
+
+  showWizStatus('wiz-step4-status', 'info', '⏳ Verifying token with Meta API...');
+  try {
+    // Test token by calling Meta API
+    const resp = await fetch(`https://graph.facebook.com/${wizardData.apiVer||'v20.0'}/${wizardData.wabaId}?fields=name&access_token=${token}`);
+    const data = await resp.json();
+    if(data.error) {
+      showWizStatus('wiz-step4-status', 'error', '❌ Token verification failed: ' + data.error.message);
+      return;
+    }
+    wizardData.token = token;
+    wizardData.wabaName = data.name || 'Your Business';
+    saveWizardData();
+    showWizStatus('wiz-step4-status', 'success', '✅ Token verified! Connected to: ' + (data.name || 'WhatsApp Business Account'));
+    setTimeout(() => goWizardStep(5), 1000);
+  } catch(e) {
+    showWizStatus('wiz-step4-status', 'error', '❌ Could not verify token. Check your internet connection.');
+  }
+}
+
+function wizStep5Next() {
+  const verifyToken = document.getElementById('wiz-verify-token').value.trim();
+  if(!verifyToken) { showWizStatus('wiz-step5-status', 'error', '❌ Please enter a verify token'); return; }
+  if(verifyToken.length < 6) { showWizStatus('wiz-step5-status', 'error', '❌ Verify token must be at least 6 characters'); return; }
+  wizardData.verifyToken = verifyToken;
+  saveWizardData();
+  // Save all settings to backend
+  saveWizardToBackend();
+}
+
+async function saveWizardToBackend() {
+  showWizStatus('wiz-step5-status', 'info', '⏳ Saving configuration...');
+  try {
+    await api('POST', '/settings', {
+      phoneNumberId: wizardData.phoneId,
+      wabaId: wizardData.wabaId,
+      accessToken: wizardData.token,
+      apiVersion: wizardData.apiVer || 'v20.0',
+      webhookToken: wizardData.verifyToken
+    });
+    showWizStatus('wiz-step5-status', 'success', '✅ Configuration saved! Now set up the webhook in Meta.');
+    setTimeout(() => goWizardStep(6), 1000);
+  } catch(e) {
+    showWizStatus('wiz-step5-status', 'error', '❌ Failed to save: ' + e.message);
+  }
+}
+
+async function wizSendTest() {
+  const phone = document.getElementById('wiz-test-phone').value.trim();
+  if(!phone) { showWizStatus('wiz-test-status', 'error', '❌ Please enter a phone number'); return; }
+  if(!phone.startsWith('+')) { showWizStatus('wiz-test-status', 'error', '❌ Phone must include country code (e.g. +919876543210)'); return; }
+  const btn = document.getElementById('wiz-test-btn');
+  btn.disabled = true; btn.innerHTML = '<div class="spinner"></div> Sending...';
+  showWizStatus('wiz-test-status', 'info', '⏳ Sending test message...');
+  try {
+    await api('POST', '/wizard/test-message', { phone });
+    showWizStatus('wiz-test-status', 'success', '✅ Test message sent! Check your WhatsApp on ' + phone);
+    document.getElementById('wiz-success').classList.remove('hidden');
+    wizardData.completed = true;
+    saveWizardData();
+  } catch(e) {
+    showWizStatus('wiz-test-status', 'error', '❌ ' + e.message + ' — Check your token and phone number ID');
+  }
+  btn.disabled = false; btn.innerHTML = '📨 Send Test Message';
+}
+
+function updateWizardSummary() {
+  const items = [
+    ['App ID', wizardData.appId],
+    ['WABA ID', wizardData.wabaId],
+    ['Phone Number ID', wizardData.phoneId],
+    ['API Version', wizardData.apiVer],
+    ['Access Token', wizardData.token ? '✅ Set (hidden)' : '❌ Not set'],
+    ['Webhook Verify Token', wizardData.verifyToken],
+  ];
+  document.getElementById('wiz-summary-content').innerHTML = items.map(([k,v]) =>
+    `<div style="display:flex;gap:8px"><span style="color:var(--muted);min-width:160px">${k}:</span><strong>${v||'—'}</strong></div>`
+  ).join('');
+}
+
+function copyWebhookUrl() {
+  const url = document.getElementById('wiz-webhook-url').textContent;
+  navigator.clipboard.writeText(url).then(() => toast('Webhook URL copied!', 'success'));
+}
+
+function showWizStatus(elId, type, msg) {
+  const el = document.getElementById(elId);
+  if(!el) return;
+  el.className = 'wizard-status ' + type;
+  el.innerHTML = msg;
+  el.classList.remove('hidden');
+}
+
+function resetWizard() {
+  if(!confirm('Reset wizard? All entered data will be cleared.')) return;
+  wizardData = {};
+  localStorage.removeItem('wizard_data');
+  document.getElementById('wiz-success').classList.add('hidden');
+  ['wiz-app-id','wiz-waba-id','wiz-phone-id','wiz-token','wiz-verify-token','wiz-test-phone'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.value = '';
+  });
+  goWizardStep(1);
+}
+
 // ── MOBILE MENU ────────────────────────────────────────────────────────────────
 function toggleMobileMenu() {
   const sidebar = document.getElementById('main-sidebar');
@@ -1511,6 +2047,7 @@ function showPage(name, el) {
   if(name==='meta-templates') loadMetaTemplates();
   if(name==='chatbot') loadChatbot();
   if(name==='flows') loadFlows();
+  if(name==='wizard') loadWizard();
 }
 
 // ── STATS ──────────────────────────────────────────────────────────────────────
