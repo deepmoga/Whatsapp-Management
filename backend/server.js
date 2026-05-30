@@ -672,7 +672,7 @@ app.get('/api/campaigns/:id', auth, (req, res) => {
 });
 
 app.post('/api/campaigns', auth, async (req, res) => {
-  const { name, messageType, messageText, imageUrl, imageCaption, templateName, delaySeconds = 3, scheduledAt, templateId } = req.body;
+  const { name, messageType, messageText, imageUrl, imageCaption, templateName, delaySeconds = 3, scheduledAt, templateId, selectedPhones } = req.body;
   const db = getDB();
 
   // If templateId, fetch from saved templates
@@ -685,13 +685,16 @@ app.post('/api/campaigns', auth, async (req, res) => {
       finalImageUrl = tpl.imageUrl;
       finalCaption = tpl.imageCaption;
       finalTemplate = tpl.templateName;
-      // Increment usage
       const ti = db.templates.findIndex(t => t.id === templateId);
       if (ti !== -1) { db.templates[ti].usageCount = (db.templates[ti].usageCount || 0) + 1; }
     }
   }
 
-  const contacts = db.contacts.filter(c => c.status !== 'opted_out');
+  // Filter: selected phones only (agar ditte hain) ya saare contacts
+  let contacts = db.contacts.filter(c => c.status !== 'opted_out');
+  if (Array.isArray(selectedPhones) && selectedPhones.length > 0) {
+    contacts = contacts.filter(c => selectedPhones.includes(c.phone));
+  }
   if (contacts.length === 0) return res.status(400).json({ error: 'Koi contact nahi mila. Pehle Excel import karo.' });
   if (!db.settings.phoneNumberId || !db.settings.accessToken) return res.status(400).json({ error: 'WhatsApp API settings set karo pehle.' });
 

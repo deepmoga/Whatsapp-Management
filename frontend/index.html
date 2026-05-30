@@ -18,6 +18,15 @@ input,textarea,select{font-family:inherit;font-size:14px}
 .hidden{display:none!important}
 a{color:var(--gd);text-decoration:none}
 
+/* SEND CONTACT SELECT */
+.send-contact-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:6px;cursor:pointer;transition:background .1s;font-size:13px}
+.send-contact-item:hover{background:var(--bg)}
+.send-contact-item.selected{background:#e8f5e9}
+.send-contact-item input[type=checkbox]{width:16px;height:16px;cursor:pointer;accent-color:var(--gd)}
+.send-contact-avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
+.send-contact-info{flex:1;min-width:0}
+.send-contact-name{font-weight:500;color:var(--text)}
+.send-contact-phone{font-size:11px;color:var(--muted)}
 /* FLOW BUILDER */
 .flow-list-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;margin-bottom:20px}
 .flow-card{background:#fff;border:1.5px solid var(--border);border-radius:12px;padding:18px;cursor:pointer;transition:border-color .15s,box-shadow .15s;position:relative}
@@ -429,11 +438,20 @@ tr:hover td{background:#fafafa}
         </div>
 
         <div class="card">
-          <div class="card-title">📁 Step 1: Contact List</div>
-          <div class="alert alert-info">💡 Contacts import karo ya pehle se imported contacts use honge. <strong id="contact-count-hint">0 contacts</strong> available hain.</div>
-          <div style="display:flex;gap:10px;flex-wrap:wrap">
-            <button class="btn btn-outline" onclick="showPage('contacts',document.querySelector('[data-page=contacts]'))">👥 Contacts Dekho</button>
-            <button class="btn btn-outline" onclick="document.getElementById('quick-excel').click()">📊 Excel Import</button>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+            <div class="card-title" style="margin:0">📁 Step 1: Contacts Select Karo</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="btn btn-outline btn-sm" onclick="document.getElementById('quick-excel').click()">📊 Excel Import</button>
+              <button class="btn btn-outline btn-sm" onclick="selectAllSendContacts()">✅ Select All</button>
+              <button class="btn btn-outline btn-sm" onclick="deselectAllSendContacts()">☐ Deselect All</button>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;margin-bottom:10px;align-items:center">
+            <input type="text" id="send-contact-search" placeholder="🔍 Phone ya naam dhundho..." oninput="filterSendContacts(this.value)" style="flex:1;padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px">
+            <span id="send-selected-count" style="font-size:13px;font-weight:600;color:var(--gdd);white-space:nowrap">0 selected</span>
+          </div>
+          <div id="send-contact-list" style="max-height:280px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:4px">
+            <div class="empty" style="padding:20px"><div class="empty-icon">👥</div><p>Contacts load ho rahe hain...</p></div>
           </div>
           <input type="file" id="quick-excel" accept=".xlsx,.xls,.csv" class="hidden" onchange="quickImport(this)" />
           <div id="quick-import-result" class="hidden" style="margin-top:10px"></div>
@@ -1383,7 +1401,7 @@ function showPage(name, el) {
   if(name==='campaigns') loadCampaigns();
   if(name==='reports') loadReports();
   if(name==='settings') loadSettings();
-  if(name==='send') { loadContactCount(); loadTemplatesForSend(); }
+  if(name==='send') { loadContactCount(); loadTemplatesForSend(); loadSendContacts(); }
   if(name==='chat') { loadChatThreads(); if(!chatPollInterval) chatPollInterval = setInterval(loadChatThreads, 8000); }
   else { if(chatPollInterval) { clearInterval(chatPollInterval); chatPollInterval = null; } }
   if(name==='templates') loadTemplates();
@@ -1426,8 +1444,102 @@ async function loadDashboard() {
 async function loadContactCount() {
   try {
     const d = await api('GET', '/contacts?page=1&limit=1');
-    document.getElementById('contact-count-hint').textContent = (d.total||0) + ' contacts';
+    // legacy hint (may not exist on send page anymore)
+    const el = document.getElementById('contact-count-hint');
+    if(el) el.textContent = (d.total||0) + ' contacts';
   } catch {}
+}
+
+// ── SEND PAGE CONTACT SELECTION ───────────────────────────────────────────────
+let allSendContacts = [];
+let filteredSendContacts = [];
+
+async function loadSendContacts() {
+  try {
+    // Load all contacts (max 5000)
+    const d = await api('GET', '/contacts?page=1&limit=5000');
+    allSendContacts = (d.contacts || []).filter(c => c.status !== 'opted_out');
+    filteredSendContacts = [...allSendContacts];
+    renderSendContactList();
+  } catch(e) {
+    document.getElementById('send-contact-list').innerHTML = '<div class="empty" style="padding:20px"><p>Contacts load nahi hue: ' + e.message + '</p></div>';
+  }
+}
+
+function renderSendContactList() {
+  const el = document.getElementById('send-contact-list');
+  if(!filteredSendContacts.length) {
+    el.innerHTML = '<div class="empty" style="padding:20px"><div class="empty-icon">👥</div><p>Koi contact nahi mila</p></div>';
+    updateSendSelectedCount();
+    return;
+  }
+  el.innerHTML = filteredSendContacts.map(c => {
+    const initials = (c.name||c.phone||'?').slice(0,2).toUpperCase();
+    const isChecked = document.getElementById('sc-'+c.id)?.checked || false;
+    return `<div class="send-contact-item ${isChecked?'selected':''}" onclick="toggleSendContact('${c.id}',this)" id="sci-${c.id}">
+      <input type="checkbox" id="sc-${c.id}" onclick="event.stopPropagation();toggleSendContact('${c.id}',document.getElementById('sci-${c.id}'))" ${isChecked?'checked':''}>
+      <div class="send-contact-avatar" style="background:${phoneColor(c.phone)}">${initials}</div>
+      <div class="send-contact-info">
+        <div class="send-contact-name">${escHtml(c.name||'—')}</div>
+        <div class="send-contact-phone">${escHtml(c.phone)}</div>
+      </div>
+    </div>`;
+  }).join('');
+  updateSendSelectedCount();
+}
+
+function toggleSendContact(id, row) {
+  const cb = document.getElementById('sc-'+id);
+  if(!cb) return;
+  cb.checked = !cb.checked;
+  row.classList.toggle('selected', cb.checked);
+  updateSendSelectedCount();
+}
+
+function updateSendSelectedCount() {
+  const checked = document.querySelectorAll('#send-contact-list input[type=checkbox]:checked').length;
+  const total = filteredSendContacts.length;
+  document.getElementById('send-selected-count').textContent = checked + ' / ' + total + ' selected';
+}
+
+function getSelectedPhones() {
+  const checked = document.querySelectorAll('#send-contact-list input[type=checkbox]:checked');
+  const ids = [...checked].map(cb => cb.id.replace('sc-',''));
+  return allSendContacts.filter(c => ids.includes(c.id)).map(c => c.phone);
+}
+
+function selectAllSendContacts() {
+  document.querySelectorAll('#send-contact-list input[type=checkbox]').forEach(cb => {
+    cb.checked = true;
+    document.getElementById('sci-'+cb.id.replace('sc-',''))?.classList.add('selected');
+  });
+  updateSendSelectedCount();
+}
+
+function deselectAllSendContacts() {
+  document.querySelectorAll('#send-contact-list input[type=checkbox]').forEach(cb => {
+    cb.checked = false;
+    document.getElementById('sci-'+cb.id.replace('sc-',''))?.classList.remove('selected');
+  });
+  updateSendSelectedCount();
+}
+
+function filterSendContacts(q) {
+  const query = (q||'').toLowerCase().trim();
+  filteredSendContacts = query
+    ? allSendContacts.filter(c => (c.name||'').toLowerCase().includes(query) || c.phone.includes(query))
+    : [...allSendContacts];
+  // Preserve checked state
+  const checkedIds = [...document.querySelectorAll('#send-contact-list input[type=checkbox]:checked')]
+    .map(cb => cb.id.replace('sc-',''));
+  renderSendContactList();
+  // Re-check previously checked
+  checkedIds.forEach(id => {
+    const cb = document.getElementById('sc-'+id);
+    const row = document.getElementById('sci-'+id);
+    if(cb) { cb.checked = true; row?.classList.add('selected'); }
+  });
+  updateSendSelectedCount();
 }
 
 // ── EXCEL UPLOAD ───────────────────────────────────────────────────────────────
@@ -1515,7 +1627,11 @@ async function startCampaign() {
   const btn = document.getElementById('send-btn');
   const result = document.getElementById('send-result');
   if(!name) { toast('Campaign naam zaroori hai', 'error'); return; }
-  let body = { name, messageType: msgType, delaySeconds: delay, scheduledAt: scheduledAt || null };
+
+  // Selected contacts check
+  const selectedPhones = getSelectedPhones();
+  if(selectedPhones.length === 0) { toast('Kam az kam ek contact select karo!', 'error'); return; }
+  let body = { name, messageType: msgType, delaySeconds: delay, scheduledAt: scheduledAt || null, selectedPhones };
   if(msgType === 'text') {
     const txt = document.getElementById('msg-text').value.trim();
     if(!txt) { toast('Message text likho', 'error'); return; }
