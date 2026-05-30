@@ -1,0 +1,2730 @@
+<!DOCTYPE html>
+<html lang="pa">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>WA Bulk Sender v2</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --g:#25D366;--gd:#128C7E;--gdd:#075e54;
+  --bg:#f0f2f5;--card:#fff;--border:#e0e0e0;
+  --text:#111;--muted:#666;--red:#e53935;--blue:#1565c0;--amber:#e65100;
+  --sidebar:230px;--chat-sidebar:280px
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);font-size:14px}
+button{cursor:pointer;font-family:inherit}
+input,textarea,select{font-family:inherit;font-size:14px}
+.hidden{display:none!important}
+a{color:var(--gd);text-decoration:none}
+
+/* FLOW BUILDER */
+.flow-list-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;margin-bottom:20px}
+.flow-card{background:#fff;border:1.5px solid var(--border);border-radius:12px;padding:18px;cursor:pointer;transition:border-color .15s,box-shadow .15s;position:relative}
+.flow-card:hover{border-color:var(--gd);box-shadow:0 4px 16px rgba(37,211,102,.12)}
+.flow-card.inactive{opacity:.6}
+.flow-card-header{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.flow-card-title{font-size:15px;font-weight:600;color:var(--text)}
+.flow-card-kw{background:#e8f5e9;color:var(--gdd);font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;white-space:nowrap}
+.flow-card-desc{font-size:12px;color:var(--muted);margin-top:6px}
+.flow-card-meta{display:flex;align-items:center;gap:8px;margin-top:12px;font-size:11px;color:var(--muted)}
+.flow-card-actions{display:flex;gap:6px;margin-top:12px}
+/* Flow editor */
+.flow-editor-header{display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap}
+.flow-back-btn{background:none;border:1.5px solid var(--border);border-radius:8px;padding:7px 14px;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px}
+.flow-back-btn:hover{border-color:var(--gd);color:var(--gd)}
+.flow-editor-title{font-size:18px;font-weight:700;flex:1}
+/* Node styles */
+.flow-canvas{display:flex;flex-direction:column;align-items:center;gap:0;padding-bottom:40px}
+.flow-node{width:100%;max-width:560px;background:#fff;border:2px solid var(--border);border-radius:12px;padding:0;position:relative;transition:border-color .15s}
+.flow-node:hover{border-color:var(--gd)}
+.flow-node-header{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--border)}
+.flow-node-type-badge{font-size:11px;font-weight:700;padding:3px 10px;border-radius:99px;text-transform:uppercase;letter-spacing:.4px}
+.type-message .flow-node-type-badge{background:#e8f5e9;color:var(--gdd)}
+.type-message{border-color:#81c784}
+.type-condition .flow-node-type-badge{background:#fff3e0;color:#e65100}
+.type-condition{border-color:#ffb74d}
+.type-end .flow-node-type-badge{background:#fce4ec;color:#c62828}
+.type-end{border-color:#ef9a9a}
+.flow-node-num{width:24px;height:24px;background:var(--bg);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--muted);flex-shrink:0}
+.flow-node-label{flex:1;font-size:13px;font-weight:600;color:var(--text)}
+.flow-node-actions{display:flex;gap:4px;margin-left:auto}
+.flow-node-body{padding:14px 16px;font-size:13px;color:var(--text);line-height:1.6;white-space:pre-wrap}
+.flow-node-conditions{padding:10px 16px 14px;display:flex;flex-direction:column;gap:6px}
+.condition-row{display:flex;align-items:center;gap:8px;background:var(--bg);border-radius:8px;padding:8px 12px;font-size:12px}
+.condition-kw{font-weight:600;color:var(--gdd);background:#e8f5e9;padding:2px 8px;border-radius:99px}
+.condition-arrow{color:var(--muted)}
+.condition-target{color:var(--blue);font-weight:500}
+/* Arrow between nodes */
+.flow-arrow{display:flex;flex-direction:column;align-items:center;gap:0;width:100%;max-width:560px}
+.flow-arrow-line{width:2px;height:24px;background:var(--border)}
+.flow-arrow-head{width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-top:10px solid var(--border)}
+.flow-add-node-btn{margin:10px 0;padding:8px 20px;background:#f0fdf4;border:1.5px dashed var(--gd);color:var(--gdd);border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:background .15s}
+.flow-add-node-btn:hover{background:#dcfce7}
+/* Sessions badge */
+.session-badge{background:#1565c0;color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:99px}
+/* CHATBOT TOGGLE */
+.bot-toggle-wrap{position:relative;display:inline-flex;align-items:center;cursor:pointer}
+.bot-toggle-wrap input{opacity:0;width:0;height:0;position:absolute}
+.bot-toggle-track{width:48px;height:26px;background:#ccc;border-radius:99px;transition:background .2s;display:flex;align-items:center;padding:3px}
+.bot-toggle-wrap input:checked ~ .bot-toggle-track{background:var(--g)}
+.bot-toggle-thumb{width:20px;height:20px;background:#fff;border-radius:50%;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.bot-toggle-wrap input:checked ~ .bot-toggle-track .bot-toggle-thumb{transform:translateX(22px)}
+/* RULE CARD */
+.rule-card{border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:10px;display:flex;align-items:flex-start;gap:12px;background:#fff}
+.rule-card.inactive{opacity:.55}
+.rule-kw{background:#e8f5e9;color:var(--gdd);font-weight:600;font-size:12px;padding:3px 10px;border-radius:99px;white-space:nowrap}
+.rule-match{background:#f3f4f6;color:var(--muted);font-size:11px;padding:2px 8px;border-radius:99px}
+.rule-reply{font-size:13px;color:var(--text);margin-top:6px;white-space:pre-wrap;line-height:1.5}
+.rule-actions{margin-left:auto;display:flex;gap:6px;flex-shrink:0}
+/* TOAST */
+#toast-container{position:fixed;top:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:8px}
+.toast{background:#323232;color:#fff;padding:12px 18px;border-radius:8px;font-size:13px;display:flex;align-items:center;gap:8px;animation:slideIn .2s ease;max-width:320px;pointer-events:none}
+.toast.success{background:#2e7d32}.toast.error{background:#c62828}
+@keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+
+/* LOGIN */
+#login-page{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--gdd) 0%,var(--gd) 100%)}
+.login-card{background:var(--card);border-radius:16px;padding:40px 36px;width:360px;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+.login-brand{text-align:center;margin-bottom:28px}
+.login-logo{width:64px;height:64px;background:var(--gd);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:30px}
+.login-brand h1{font-size:22px;font-weight:600;color:var(--text)}
+.login-brand p{font-size:13px;color:var(--muted);margin-top:4px}
+.form-group{margin-bottom:14px}
+.form-group label{display:block;font-size:12px;font-weight:500;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px}
+.form-group input{width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:8px;color:var(--text);background:#fff;transition:border-color .2s}
+.form-group input:focus{outline:none;border-color:var(--gd)}
+.btn-primary{width:100%;padding:12px;background:var(--gd);color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:600;transition:background .2s}
+.btn-primary:hover{background:var(--g)}
+.login-hint{text-align:center;font-size:12px;color:var(--muted);margin-top:14px}
+
+/* APP LAYOUT */
+#app{display:flex;flex-direction:column;min-height:100vh}
+.nav{background:var(--gdd);color:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 20px;height:56px;position:sticky;top:0;z-index:100}
+.nav-left{display:flex;align-items:center;gap:10px;font-weight:600;font-size:16px}
+.nav-logo-icon{width:34px;height:34px;background:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px}
+.nav-right{display:flex;align-items:center;gap:10px;font-size:13px}
+.nav-avatar{width:32px;height:32px;background:rgba(255,255,255,.25);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:13px}
+.btn-logout{background:rgba(255,255,255,.15);border:none;color:#fff;padding:5px 12px;border-radius:6px;font-size:12px}
+.btn-logout:hover{background:rgba(255,255,255,.25)}
+.unread-badge{background:var(--red);color:#fff;border-radius:99px;padding:1px 6px;font-size:10px;font-weight:700;min-width:18px;text-align:center}
+
+.main{display:flex;flex:1}
+.sidebar{width:var(--sidebar);background:var(--card);border-right:1px solid var(--border);padding:8px 0;position:sticky;top:56px;height:calc(100vh - 56px);overflow-y:auto}
+.nav-item{display:flex;align-items:center;gap:10px;padding:11px 20px;color:var(--muted);cursor:pointer;border-left:3px solid transparent;transition:all .15s;font-size:14px}
+.nav-item:hover{background:var(--bg);color:var(--text)}
+.nav-item.active{background:#e8f5e9;color:var(--gd);border-left-color:var(--gd);font-weight:600}
+.nav-item .icon{font-size:18px;width:20px;text-align:center}
+.nav-item-badge{margin-left:auto;background:var(--red);color:#fff;border-radius:99px;padding:1px 7px;font-size:10px;font-weight:700}
+.sidebar-divider{height:1px;background:var(--border);margin:8px 16px}
+.sidebar-label{font-size:11px;color:var(--muted);padding:8px 20px 4px;text-transform:uppercase;letter-spacing:.5px;font-weight:500}
+
+.content{flex:1;padding:24px;overflow-y:auto;max-width:1200px}
+
+/* PAGE */
+.page-header{margin-bottom:20px}
+.page-header h2{font-size:20px;font-weight:600}
+.page-header p{font-size:13px;color:var(--muted);margin-top:4px}
+.page-header-row{display:flex;justify-content:space-between;align-items:flex-start}
+
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px}
+.card-title{font-size:15px;font-weight:600;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+
+/* STATS */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.stat{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px}
+.stat-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:10px}
+.stat-val{font-size:24px;font-weight:700}
+.stat-lbl{font-size:12px;color:var(--muted);margin-top:2px}
+.si-g{background:#e8f5e9}.si-r{background:#ffebee}.si-b{background:#e3f2fd}.si-a{background:#fff8e1}.si-p{background:#f3e5f5}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
+.badge-g{background:#e8f5e9;color:#2e7d32}.badge-r{background:#ffebee;color:#c62828}
+.badge-a{background:#fff8e1;color:#e65100}.badge-b{background:#e3f2fd;color:#1565c0}
+.badge-gr{background:#f5f5f5;color:#555}.badge-p{background:#f3e5f5;color:#7b1fa2}
+
+/* TABLE */
+.table-wrap{overflow-x:auto;border-radius:8px;border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:10px 14px;background:var(--bg);color:var(--muted);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid var(--border)}
+td{padding:11px 14px;border-top:1px solid var(--border);color:var(--text);vertical-align:middle}
+tr:hover td{background:#fafafa}
+.table-empty{text-align:center;padding:40px;color:var(--muted);font-size:13px}
+
+/* FORMS */
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.form-full{grid-column:1/-1}
+.field label{display:block;font-size:12px;font-weight:500;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px}
+.field input,.field textarea,.field select{width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;background:#fff;color:var(--text);transition:border-color .2s}
+.field input:focus,.field textarea:focus,.field select:focus{outline:none;border-color:var(--gd)}
+.field textarea{resize:vertical;min-height:90px;line-height:1.5}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:600;border:none;transition:all .15s;cursor:pointer}
+.btn-green{background:var(--gd);color:#fff}.btn-green:hover{background:var(--g)}
+.btn-outline{background:#fff;color:var(--text);border:1.5px solid var(--border)}.btn-outline:hover{background:var(--bg)}
+.btn-red{background:var(--red);color:#fff}.btn-red:hover{background:#c62828}
+.btn-blue{background:var(--blue);color:#fff}.btn-blue:hover{background:#1976d2}
+.btn-sm{padding:6px 12px;font-size:12px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+
+/* UPLOAD BOX */
+.upload-box{border:2px dashed var(--border);border-radius:10px;padding:28px;text-align:center;cursor:pointer;transition:all .2s}
+.upload-box:hover,.upload-box.dragover{border-color:var(--gd);background:#f0faf4}
+.upload-box .icon{font-size:36px;margin-bottom:10px}
+.upload-box p{font-size:13px;color:var(--muted)}
+.upload-box .hint{font-size:11px;margin-top:6px;color:#aaa}
+.upload-status{font-size:13px;color:var(--gd);font-weight:600;margin-top:8px}
+
+/* TABS */
+.tab-row{display:flex;background:var(--bg);border-radius:8px;padding:4px;gap:4px;margin-bottom:16px}
+.tab-btn{flex:1;padding:8px;border:none;background:transparent;border-radius:6px;font-size:13px;color:var(--muted);font-weight:500;transition:all .15s}
+.tab-btn.active{background:var(--card);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.1)}
+
+/* PROGRESS */
+.progress{height:8px;background:var(--bg);border-radius:99px;overflow:hidden;margin-top:8px}
+.progress-fill{height:100%;background:var(--gd);border-radius:99px;transition:width .4s}
+
+/* CAMPAIGN ITEM */
+.camp-item{border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:10px;background:var(--card)}
+.camp-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.camp-name{font-weight:600;font-size:15px}
+.camp-meta{font-size:12px;color:var(--muted);margin-bottom:8px}
+.camp-stats{display:flex;gap:16px;font-size:12px;margin-top:8px}
+.cs{display:flex;align-items:center;gap:4px}
+.cs-g{color:#2e7d32}.cs-r{color:#c62828}.cs-a{color:#e65100}
+.camp-actions{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+
+/* ALERT */
+.alert{border-radius:8px;padding:12px 16px;font-size:13px;margin-bottom:14px;display:flex;gap:10px;align-items:flex-start;line-height:1.5}
+.alert-info{background:#e3f2fd;color:#1565c0;border:1px solid #90caf9}
+.alert-success{background:#e8f5e9;color:#2e7d32;border:1px solid #a5d6a7}
+.alert-warn{background:#fff8e1;color:#e65100;border:1px solid #ffcc80}
+.alert-error{background:#ffebee;color:#c62828;border:1px solid #ef9a9a}
+
+/* SPINNER */
+.spinner{width:18px;height:18px;border:2px solid rgba(255,255,255,.3);border-top:2px solid #fff;border-radius:50%;animation:spin .6s linear infinite;display:inline-block}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spinner-dark{border-color:rgba(0,0,0,.1);border-top-color:var(--gd)}
+
+/* SEARCH BAR */
+.search-bar{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 16px;margin-bottom:16px}
+.search-bar input{border:none;background:transparent;flex:1;font-size:14px;color:var(--text);outline:none}
+
+/* PAGINATION */
+.pagination{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-top:12px;font-size:13px}
+.page-btn{padding:5px 10px;border:1px solid var(--border);border-radius:6px;background:#fff;color:var(--text)}
+.page-btn:hover{background:var(--bg)}.page-btn.active{background:var(--gd);color:#fff;border-color:var(--gd)}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px}
+.modal{background:var(--card);border-radius:14px;padding:28px;max-width:560px;width:100%;max-height:90vh;overflow-y:auto}
+.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.modal-title{font-size:17px;font-weight:600}
+.modal-close{background:none;border:none;font-size:20px;color:var(--muted);line-height:1;cursor:pointer}
+
+/* EMPTY STATE */
+.empty{text-align:center;padding:60px 20px;color:var(--muted)}
+.empty .empty-icon{font-size:48px;margin-bottom:12px;opacity:.4}
+.empty p{font-size:14px}
+
+/* ═══════════════════════════════════════════════════════
+   CHAT PAGE STYLES
+═══════════════════════════════════════════════════════ */
+#page-chat{display:flex;height:calc(100vh - 56px);overflow:hidden;padding:0;max-width:100%}
+.chat-list-panel{width:var(--chat-sidebar);border-right:1px solid var(--border);background:var(--card);display:flex;flex-direction:column;flex-shrink:0}
+.chat-list-header{padding:16px;border-bottom:1px solid var(--border);background:#f9f9f9}
+.chat-list-header h3{font-size:16px;font-weight:600;margin-bottom:10px}
+.chat-search{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--border);border-radius:8px;padding:8px 12px}
+.chat-search input{border:none;outline:none;font-size:13px;flex:1;background:transparent}
+.chat-threads{flex:1;overflow-y:auto}
+.thread-item{display:flex;align-items:center;gap:10px;padding:13px 16px;border-bottom:1px solid #f0f0f0;cursor:pointer;transition:background .1s}
+.thread-item:hover{background:#f5f5f5}
+.thread-item.active{background:#e8f5e9}
+.thread-avatar{width:40px;height:40px;border-radius:50%;background:var(--gd);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:15px;flex-shrink:0}
+.thread-info{flex:1;min-width:0}
+.thread-name{font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.thread-preview{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.thread-meta{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0}
+.thread-time{font-size:11px;color:var(--muted)}
+.thread-unread{background:var(--gd);color:#fff;border-radius:99px;padding:2px 7px;font-size:10px;font-weight:700}
+.thread-in{color:var(--muted)}
+.thread-out{color:var(--gd)}
+
+.chat-window{flex:1;display:flex;flex-direction:column;background:#e5ddd5}
+.chat-window-empty{flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;color:var(--muted);background:#f8f9fa}
+.chat-header{background:var(--gdd);color:#fff;padding:12px 20px;display:flex;align-items:center;gap:12px;flex-shrink:0}
+.chat-header-avatar{width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center;font-weight:600;font-size:15px}
+.chat-header-info{flex:1}
+.chat-header-name{font-weight:600;font-size:15px}
+.chat-header-phone{font-size:12px;opacity:.8}
+.chat-messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:4px}
+.msg-bubble{max-width:65%;padding:9px 13px;border-radius:12px;font-size:13px;line-height:1.5;word-break:break-word;position:relative}
+.msg-out{background:#dcf8c6;align-self:flex-end;border-bottom-right-radius:3px}
+.msg-in{background:#fff;align-self:flex-start;border-bottom-left-radius:3px;box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.msg-time{font-size:10px;color:var(--muted);margin-top:4px;display:flex;align-items:center;gap:4px}
+.msg-out .msg-time{justify-content:flex-end}
+.msg-status{font-size:12px}
+.msg-status.sent{color:#90caf9}.msg-status.delivered{color:var(--gd)}.msg-status.failed{color:var(--red)}
+.msg-date-divider{text-align:center;margin:12px 0;font-size:11px;color:var(--muted)}
+.msg-date-divider span{background:rgba(255,255,255,.8);padding:4px 12px;border-radius:99px;box-shadow:0 1px 2px rgba(0,0,0,.1)}
+.chat-input-area{background:#f0f0f0;padding:12px 16px;display:flex;align-items:flex-end;gap:10px;border-top:1px solid var(--border)}
+.chat-input-box{flex:1;background:#fff;border:1.5px solid var(--border);border-radius:20px;padding:10px 16px;font-size:14px;resize:none;outline:none;max-height:120px;overflow-y:auto;line-height:1.5;font-family:inherit;transition:border-color .2s}
+.chat-input-box:focus{border-color:var(--gd)}
+.chat-send-btn{width:44px;height:44px;border-radius:50%;background:var(--gd);border:none;color:#fff;font-size:20px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .2s}
+.chat-send-btn:hover{background:var(--g)}
+.chat-send-btn:disabled{opacity:.5;cursor:not-allowed}
+.chat-attach-btn{width:36px;height:36px;border-radius:50%;background:transparent;border:1.5px solid var(--border);color:var(--muted);font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;transition:all .15s}
+.chat-attach-btn:hover{background:var(--bg);border-color:var(--gd);color:var(--gd)}
+.chat-no-contact{flex:1;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:14px;flex-direction:column;gap:12px;background:#f8f9fa}
+.new-chat-btn{background:var(--gd);color:#fff;border:none;border-radius:8px;padding:9px 16px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px;cursor:pointer;transition:background .2s;width:100%}
+.new-chat-btn:hover{background:var(--g)}
+
+/* ═══════════════════════════════════════════════════════
+   TEMPLATES PAGE STYLES
+═══════════════════════════════════════════════════════ */
+.tpl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-top:4px}
+.tpl-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px;cursor:default;transition:box-shadow .15s}
+.tpl-card:hover{box-shadow:0 2px 12px rgba(0,0,0,.08)}
+.tpl-card-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+.tpl-name{font-weight:600;font-size:14px}
+.tpl-cat{font-size:11px;color:var(--muted)}
+.tpl-preview{font-size:13px;color:var(--text);line-height:1.5;margin:8px 0;min-height:40px;white-space:pre-wrap;word-break:break-word;background:var(--bg);border-radius:6px;padding:8px 10px;max-height:80px;overflow:hidden}
+.tpl-footer{display:flex;align-items:center;justify-content:space-between;margin-top:10px}
+.tpl-meta{font-size:11px;color:var(--muted)}
+.tpl-actions{display:flex;gap:6px}
+.cat-filter{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.cat-chip{padding:5px 14px;border-radius:20px;border:1.5px solid var(--border);background:#fff;font-size:12px;font-weight:500;color:var(--muted);cursor:pointer;transition:all .15s}
+.cat-chip.active{background:var(--gd);color:#fff;border-color:var(--gd)}
+
+@media(max-width:768px){
+  .stats-grid{grid-template-columns:1fr 1fr}
+  .form-row{grid-template-columns:1fr}
+  .sidebar{display:none}
+  #page-chat{flex-direction:column;height:auto}
+  .chat-list-panel{width:100%;height:300px}
+  .tpl-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<div id="toast-container"></div>
+
+<!-- LOGIN PAGE -->
+<div id="login-page">
+  <div class="login-card">
+    <div class="login-brand">
+      <div class="login-logo">📱</div>
+      <h1>WA Bulk Sender</h1>
+      <p>Apne account mein login karo</p>
+    </div>
+    <div class="form-group">
+      <label>Email</label>
+      <input type="email" id="li-email" value="admin@example.com" placeholder="admin@example.com" />
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" id="li-pass" value="admin123" placeholder="••••••••" />
+    </div>
+    <button class="btn-primary" id="li-btn" onclick="doLogin()">🔐 Login Karo</button>
+    <p class="login-hint">Demo: admin@example.com / admin123</p>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app" class="hidden">
+  <!-- NAV -->
+  <nav class="nav">
+    <div class="nav-left">
+      <div class="nav-logo-icon">📱</div>
+      WA Bulk Sender <span style="font-size:11px;opacity:.7;font-weight:400;margin-left:4px">v2.0</span>
+    </div>
+    <div class="nav-right">
+      <span id="nav-unread-wrap" class="hidden"><span class="unread-badge" id="nav-unread">0</span></span>
+      <div class="nav-avatar" id="nav-initials">AD</div>
+      <span id="nav-name">Admin</span>
+      <button class="btn-logout" onclick="doLogout()">⎋ Logout</button>
+    </div>
+  </nav>
+
+  <div class="main">
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="nav-item active" onclick="showPage('dashboard',this)" data-page="dashboard">
+        <span class="icon">📊</span> Dashboard
+      </div>
+      <div class="nav-item" onclick="showPage('send',this)" data-page="send">
+        <span class="icon">📤</span> Message Bhejo
+      </div>
+      <div class="sidebar-divider"></div>
+      <div class="sidebar-label">Manage</div>
+      <div class="nav-item" onclick="showPage('chat',this)" data-page="chat">
+        <span class="icon">💬</span> Chat / Inbox
+        <span class="nav-item-badge hidden" id="sidebar-unread">0</span>
+      </div>
+      <div class="nav-item" onclick="showPage('chatbot',this)" data-page="chatbot">
+        <span class="icon">🤖</span> Chatbot
+      </div>
+      <div class="nav-item" onclick="showPage('flows',this)" data-page="flows">
+        <span class="icon">🔀</span> Flow Builder
+      </div>
+      <div class="nav-item" onclick="showPage('templates',this)" data-page="templates">
+        <span class="icon">📝</span> My Templates
+      </div>
+      <div class="nav-item" onclick="showPage('meta-templates',this)" data-page="meta-templates">
+        <span class="icon">✅</span> WA Approval
+      </div>
+      <div class="sidebar-divider"></div>
+      <div class="sidebar-label">Data</div>
+      <div class="nav-item" onclick="showPage('contacts',this)" data-page="contacts">
+        <span class="icon">👥</span> Contacts
+      </div>
+      <div class="nav-item" onclick="showPage('campaigns',this)" data-page="campaigns">
+        <span class="icon">📋</span> Campaigns
+      </div>
+      <div class="nav-item" onclick="showPage('reports',this)" data-page="reports">
+        <span class="icon">📈</span> Reports
+      </div>
+      <div class="sidebar-divider"></div>
+      <div class="nav-item" onclick="showPage('settings',this)" data-page="settings">
+        <span class="icon">⚙️</span> Settings
+      </div>
+    </aside>
+
+    <!-- CONTENT -->
+    <main class="content" id="main-content">
+
+      <!-- DASHBOARD -->
+      <div id="page-dashboard">
+        <div class="page-header">
+          <h2>Dashboard</h2>
+          <p>Campaign overview te live stats</p>
+        </div>
+        <div class="stats-grid" id="stats-grid">
+          <div class="stat"><div class="stat-icon si-b">👥</div><div class="stat-val" id="s-contacts">—</div><div class="stat-lbl">Total Contacts</div></div>
+          <div class="stat"><div class="stat-icon si-g">✅</div><div class="stat-val" id="s-sent">—</div><div class="stat-lbl">Messages Gaye</div></div>
+          <div class="stat"><div class="stat-icon si-r">❌</div><div class="stat-val" id="s-failed">—</div><div class="stat-lbl">Failed Messages</div></div>
+          <div class="stat"><div class="stat-icon si-a">🔥</div><div class="stat-val" id="s-active">—</div><div class="stat-lbl">Active Campaigns</div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">
+          <div class="stat"><div class="stat-icon si-p">💬</div><div class="stat-val" id="s-chats">—</div><div class="stat-lbl">Total Chat Messages</div></div>
+          <div class="stat" style="cursor:pointer" onclick="showPage('chat',document.querySelector('[data-page=chat]'))"><div class="stat-icon si-r">📩</div><div class="stat-val" id="s-unread">—</div><div class="stat-lbl">Unread Messages</div></div>
+        </div>
+        <div class="card">
+          <div class="card-title">🕐 Recent Campaigns</div>
+          <div id="dash-campaigns">
+            <div class="empty"><div class="empty-icon">📭</div><p>Abhi koi campaign nahi hai</p></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SEND MESSAGE -->
+      <div id="page-send" class="hidden">
+        <div class="page-header">
+          <h2>Message Bhejo</h2>
+          <p>Bulk WhatsApp messages bhejo – contacts pehle se hone chahide</p>
+        </div>
+
+        <div class="card">
+          <div class="card-title">📁 Step 1: Contact List</div>
+          <div class="alert alert-info">💡 Contacts import karo ya pehle se imported contacts use honge. <strong id="contact-count-hint">0 contacts</strong> available hain.</div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <button class="btn btn-outline" onclick="showPage('contacts',document.querySelector('[data-page=contacts]'))">👥 Contacts Dekho</button>
+            <button class="btn btn-outline" onclick="document.getElementById('quick-excel').click()">📊 Excel Import</button>
+          </div>
+          <input type="file" id="quick-excel" accept=".xlsx,.xls,.csv" class="hidden" onchange="quickImport(this)" />
+          <div id="quick-import-result" class="hidden" style="margin-top:10px"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">📝 Step 2: Template ya Custom Message</div>
+          <div id="send-template-row" style="margin-bottom:12px">
+            <label style="font-size:12px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:6px">Saved Template Use Karo (optional)</label>
+            <div style="display:flex;gap:8px">
+              <select id="send-tpl-select" style="flex:1;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;background:#fff" onchange="applyTemplate(this.value)">
+                <option value="">— Template select karo —</option>
+              </select>
+              <button class="btn btn-outline btn-sm" onclick="showPage('templates',document.querySelector('[data-page=templates]'))">+ Naya</button>
+            </div>
+          </div>
+          <div class="tab-row">
+            <button class="tab-btn active" onclick="switchMsgTab('text',this)">📝 Text</button>
+            <button class="tab-btn" onclick="switchMsgTab('image',this)">🖼️ Image + Caption</button>
+            <button class="tab-btn" onclick="switchMsgTab('template',this)">📋 WA Template</button>
+          </div>
+          <div id="tab-text">
+            <div class="field">
+              <label>Message Text</label>
+              <textarea id="msg-text" placeholder="Sat Sri Akal! Saanu khushi hai...&#10;&#10;Variables: {{name}} {{phone}}" rows="5"></textarea>
+            </div>
+            <p style="font-size:12px;color:var(--muted);margin-top:6px">💡 <strong>{{name}}</strong> ta contact da naam, <strong>{{phone}}</strong> ta number auto-fill ho jaye</p>
+          </div>
+          <div id="tab-image" class="hidden">
+            <div class="upload-box" style="margin-bottom:14px" onclick="document.getElementById('img-file').click()">
+              <div class="icon">🖼️</div>
+              <p>Image click karo (JPG/PNG, max 5MB)</p>
+              <div class="upload-status hidden" id="img-upload-status"></div>
+            </div>
+            <input type="file" id="img-file" accept="image/*" class="hidden" onchange="handleImageUpload(this)" />
+            <div class="field">
+              <label>Caption (optional)</label>
+              <textarea id="img-caption" placeholder="Image de naal kuch likhna hai..." rows="3"></textarea>
+            </div>
+          </div>
+          <div id="tab-template" class="hidden">
+            <div class="alert alert-warn">⚠️ Sirf Meta-approved templates hi kaam karde aa. Meta Business Manager mein approve karwao pehle.</div>
+            <div class="field">
+              <label>Template Name</label>
+              <input type="text" id="template-name" placeholder="hello_world" />
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">⚙️ Step 3: Campaign Settings</div>
+          <div class="form-row">
+            <div class="field">
+              <label>Campaign Name *</label>
+              <input type="text" id="camp-name" placeholder="Diwali Offer 2025" />
+            </div>
+            <div class="field">
+              <label>Schedule (khaali = abhi)</label>
+              <input type="datetime-local" id="camp-schedule" />
+            </div>
+            <div class="field">
+              <label>Delay Between Messages (seconds)</label>
+              <input type="number" id="camp-delay" value="3" min="1" max="60" />
+            </div>
+            <div class="field">
+              <label>Daily Limit (max msgs/day)</label>
+              <input type="number" id="camp-limit" value="1000" min="1" />
+            </div>
+          </div>
+        </div>
+
+        <div id="send-result" class="hidden" style="margin-bottom:14px"></div>
+        <button class="btn btn-green" id="send-btn" onclick="startCampaign()" style="font-size:15px;padding:13px 28px">
+          🚀 Campaign Start Karo
+        </button>
+      </div>
+
+      <!-- ═══════════════════════════════════════════════════
+           CHAT PAGE
+      ═══════════════════════════════════════════════════ -->
+      <div id="page-chat" class="hidden" style="padding:0">
+        <!-- Left: thread list -->
+        <div class="chat-list-panel">
+          <div class="chat-list-header">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+              <h3>💬 Inbox</h3>
+              <button class="btn btn-green btn-sm" onclick="openNewChatModal()">+ Naya Chat</button>
+            </div>
+            <div class="chat-search">
+              <span>🔍</span>
+              <input type="text" id="chat-search-input" placeholder="Phone ya naam..." oninput="filterThreads(this.value)" />
+            </div>
+          </div>
+          <div class="chat-threads" id="chat-threads">
+            <div class="empty" style="padding:30px 20px"><div class="empty-icon">💬</div><p>Abhi koi chat nahi</p></div>
+          </div>
+        </div>
+
+        <!-- Right: chat window -->
+        <div class="chat-window" id="chat-window">
+          <div class="chat-window-empty" id="chat-empty-state">
+            <div style="font-size:60px;opacity:.3">💬</div>
+            <div style="font-size:16px;font-weight:500;color:var(--muted)">Koi conversation select karo</div>
+            <div style="font-size:13px;color:var(--muted)">Ya naya chat shuru karo</div>
+            <button class="btn btn-green btn-sm" onclick="openNewChatModal()" style="margin-top:8px">+ Naya Chat</button>
+          </div>
+          <div id="chat-active" class="hidden" style="display:flex;flex-direction:column;height:100%">
+            <div class="chat-header">
+              <div class="chat-header-avatar" id="chat-avatar">?</div>
+              <div class="chat-header-info">
+                <div class="chat-header-name" id="chat-contact-name">—</div>
+                <div class="chat-header-phone" id="chat-contact-phone">—</div>
+              </div>
+              <button class="btn btn-outline btn-sm" style="margin-left:auto;color:#fff;border-color:rgba(255,255,255,.3);background:transparent" onclick="openChatSendModal()">📋 Template</button>
+            </div>
+            <div class="chat-messages" id="chat-messages">
+              <div class="empty" style="padding:30px"><div class="empty-icon">💬</div><p>Koi message nahi</p></div>
+            </div>
+            <div class="chat-input-area">
+              <textarea class="chat-input-box" id="chat-input" placeholder="Message likhao..." rows="1" onkeydown="chatInputKeydown(event)" oninput="autoResize(this)"></textarea>
+              <button class="chat-send-btn" id="chat-send-btn" onclick="sendChatMessage()">➤</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════════════════════════
+           TEMPLATES PAGE
+      ═══════════════════════════════════════════════════ -->
+      <div id="page-templates" class="hidden">
+        <div class="page-header page-header-row">
+          <div>
+            <h2>Message Templates</h2>
+            <p>Saved templates – campaigns te chat mein quick use karo</p>
+          </div>
+          <button class="btn btn-green" onclick="openTplModal()">+ Naya Template</button>
+        </div>
+
+        <div class="cat-filter" id="cat-filter">
+          <div class="cat-chip active" onclick="filterTplCat('',this)">🗂️ Saare</div>
+          <div class="cat-chip" onclick="filterTplCat('promotional',this)">🛍️ Promotional</div>
+          <div class="cat-chip" onclick="filterTplCat('transactional',this)">🔔 Transactional</div>
+          <div class="cat-chip" onclick="filterTplCat('greeting',this)">👋 Greeting</div>
+          <div class="cat-chip" onclick="filterTplCat('support',this)">🛠️ Support</div>
+          <div class="cat-chip" onclick="filterTplCat('general',this)">📄 General</div>
+        </div>
+
+        <div id="tpl-grid" class="tpl-grid">
+          <div class="empty" style="grid-column:1/-1;padding:40px 20px"><div class="empty-icon">📝</div><p>Koi template nahi. Upar + Naya Template te click karo.</p></div>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════════════════════════
+           META WA TEMPLATES PAGE
+      ═══════════════════════════════════════════════════ -->
+      <div id="page-meta-templates" class="hidden">
+        <div class="page-header page-header-row">
+          <div>
+            <h2>✅ WhatsApp Template Approval</h2>
+            <p>Meta nu template submit karo, status check karo, delete karo</p>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-outline" id="meta-refresh-btn" onclick="loadMetaTemplates()">🔄 Refresh</button>
+            <button class="btn btn-green" onclick="openMetaTplModal()">+ Submit Naya Template</button>
+          </div>
+        </div>
+
+        <div class="alert alert-info" id="meta-cred-warn" style="display:none">
+          ⚠️ <strong>WABA ID / Access Token set nahi.</strong>
+          <a href="#" onclick="showPage('settings',document.querySelector('[data-page=settings]'))">Settings</a> mein jaake set karo.
+        </div>
+
+        <!-- STATUS FILTER TABS -->
+        <div class="tab-row" style="max-width:500px">
+          <button class="tab-btn active" id="mf-all" onclick="filterMetaTpl('',this)">🗂️ Saare</button>
+          <button class="tab-btn" id="mf-approved" onclick="filterMetaTpl('APPROVED',this)">✅ Approved</button>
+          <button class="tab-btn" id="mf-pending" onclick="filterMetaTpl('PENDING',this)">⏳ Pending</button>
+          <button class="tab-btn" id="mf-rejected" onclick="filterMetaTpl('REJECTED',this)">❌ Rejected</button>
+        </div>
+
+        <!-- STATS ROW -->
+        <div id="meta-stats" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px"></div>
+
+        <!-- TEMPLATES TABLE -->
+        <div id="meta-tpl-content">
+          <div class="empty"><div class="empty-icon">⏳</div><p>Load karo – upar Refresh dabao</p></div>
+        </div>
+      </div>
+
+      <!-- CONTACTS -->
+      <div id="page-contacts" class="hidden">
+        <div class="page-header page-header-row">
+          <div>
+            <h2>Contacts</h2>
+            <p>Saare imported phone numbers</p>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-outline btn-sm" onclick="openAddContactModal()">➕ Add Contact</button>
+            <button class="btn btn-outline btn-sm" onclick="if(confirm('Saare contacts delete karne hai?')) clearContacts()">🗑️ Clear All</button>
+            <button class="btn btn-green btn-sm" onclick="document.getElementById('import-file').click()">📊 Excel Import</button>
+            <input type="file" id="import-file" accept=".xlsx,.xls,.csv" class="hidden" onchange="handleExcelUpload(this)" />
+          </div>
+        </div>
+        <div class="search-bar">
+          <span>🔍</span>
+          <input type="text" id="contact-search" placeholder="Phone number ya naam search karo..." oninput="searchContacts(this.value)" />
+          <select id="contact-status-filter" onchange="filterContacts()" style="border:none;background:transparent;color:var(--muted);cursor:pointer">
+            <option value="">Saare</option>
+            <option value="pending">Pending</option>
+            <option value="sent">Sent</option>
+            <option value="failed">Failed</option>
+            <option value="opted_out">Opted Out</option>
+          </select>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>#</th><th>Phone</th><th>Name</th><th>Status</th><th>Added</th><th>Actions</th></tr></thead>
+            <tbody id="contacts-body"><tr><td colspan="6" class="table-empty">Contacts load ho rahe aa...</td></tr></tbody>
+          </table>
+        </div>
+        <div class="pagination" id="contact-pages"></div>
+      </div>
+
+      <!-- CAMPAIGNS -->
+      <div id="page-campaigns" class="hidden">
+        <div class="page-header">
+          <h2>Campaigns</h2>
+          <p>Saari campaigns te unha da status</p>
+        </div>
+        <div id="campaigns-list">
+          <div class="empty"><div class="empty-icon">📭</div><p>Abhi koi campaign nahi</p></div>
+        </div>
+      </div>
+
+      <!-- REPORTS -->
+      <div id="page-reports" class="hidden">
+        <div class="page-header">
+          <h2>Reports</h2>
+          <p>Detailed delivery stats te analytics</p>
+        </div>
+        <div class="stats-grid">
+          <div class="stat"><div class="stat-icon si-b">📊</div><div class="stat-val" id="r-campaigns">—</div><div class="stat-lbl">Total Campaigns</div></div>
+          <div class="stat"><div class="stat-icon si-g">✅</div><div class="stat-val" id="r-sent">—</div><div class="stat-lbl">Total Sent</div></div>
+          <div class="stat"><div class="stat-icon si-r">❌</div><div class="stat-val" id="r-failed">—</div><div class="stat-lbl">Total Failed</div></div>
+          <div class="stat"><div class="stat-icon si-a">📈</div><div class="stat-val" id="r-rate">—%</div><div class="stat-lbl">Avg Delivery Rate</div></div>
+        </div>
+        <div id="report-campaigns"></div>
+      </div>
+
+      <!-- FLOW BUILDER -->
+      <div id="page-flows" class="hidden">
+
+        <!-- FLOW LIST VIEW -->
+        <div id="flow-list-view">
+          <div class="page-header-row">
+            <div class="page-header">
+              <h2>🔀 Flow Builder</h2>
+              <p>Multi-step conversation flows — keyword naal trigger, nodes naal guide karo users nu</p>
+            </div>
+            <button class="btn btn-green" onclick="openCreateFlowModal()" style="margin-top:4px">+ New Flow</button>
+          </div>
+          <div class="alert alert-info" style="margin-bottom:16px;font-size:13px">
+            💡 <strong>Flows > Chatbot Rules</strong> — jado flow trigger hoga, chatbot rules skip ho jande ne. Flow vich Message → Condition → Message chain banao.
+          </div>
+          <div class="flow-list-grid" id="flow-list-grid">
+            <div class="empty" style="grid-column:1/-1"><div class="empty-icon">🔀</div><p>Abhi koi flow nahi. Pehla flow banao!</p></div>
+          </div>
+          <div class="card" style="margin-top:8px">
+            <div class="card-title">👥 Active User Sessions <span class="session-badge" id="sessions-count">0</span></div>
+            <div id="sessions-list" style="font-size:13px;color:var(--muted)">Koi active session nahi</div>
+          </div>
+        </div>
+
+        <!-- FLOW EDITOR VIEW -->
+        <div id="flow-editor-view" class="hidden">
+          <div class="flow-editor-header">
+            <button class="flow-back-btn" onclick="backToFlowList()">← Back</button>
+            <div class="flow-editor-title" id="flow-editor-title">Flow Name</div>
+            <span id="flow-editor-kw-badge" class="flow-card-kw" style="font-size:12px"></span>
+            <div style="display:flex;gap:8px;margin-left:auto">
+              <button class="btn btn-outline btn-sm" onclick="openEditFlowMeta()">✏️ Edit Info</button>
+              <button class="btn btn-sm" id="flow-active-btn" onclick="toggleFlowActive()">⏸ Pause</button>
+            </div>
+          </div>
+
+          <!-- Canvas -->
+          <div style="display:flex;gap:20px;align-items:flex-start">
+            <div style="flex:1">
+              <div class="flow-canvas" id="flow-canvas"></div>
+              <div style="display:flex;justify-content:center;margin-top:8px">
+                <button class="flow-add-node-btn" onclick="openAddNodeModal()">＋ Node Add Karo</button>
+              </div>
+            </div>
+            <!-- Legend -->
+            <div style="width:200px;flex-shrink:0">
+              <div class="card" style="padding:14px;font-size:12px">
+                <div style="font-weight:600;margin-bottom:10px">Node Types</div>
+                <div style="display:flex;flex-direction:column;gap:8px">
+                  <div><span class="flow-node-type-badge" style="background:#e8f5e9;color:#075e54">Message</span><p style="margin-top:4px;color:var(--muted)">Text message bhejo. Auto agla node te janda hai.</p></div>
+                  <div style="margin-top:4px"><span class="flow-node-type-badge" style="background:#fff3e0;color:#e65100">Condition</span><p style="margin-top:4px;color:var(--muted)">User da reply check karo, branch karo.</p></div>
+                  <div style="margin-top:4px"><span class="flow-node-type-badge" style="background:#fce4ec;color:#c62828">End</span><p style="margin-top:4px;color:var(--muted)">Flow khatam karo. Optional goodbye message.</p></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- CREATE FLOW MODAL -->
+      <div id="create-flow-modal" class="modal-overlay hidden" onclick="if(event.target===this)closeCreateFlowModal()">
+        <div class="modal-box" style="max-width:460px">
+          <div class="modal-header">
+            <div class="modal-title" id="create-flow-modal-title">New Flow Banao</div>
+            <button class="modal-close" onclick="closeCreateFlowModal()">✕</button>
+          </div>
+          <div style="padding:20px;display:flex;flex-direction:column;gap:14px">
+            <input type="hidden" id="edit-flow-id">
+            <div class="field">
+              <label>Flow Name *</label>
+              <input type="text" id="flow-name-input" placeholder="e.g. Welcome Flow, Price Inquiry" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px">
+            </div>
+            <div class="field">
+              <label>Trigger Keyword * <span style="font-weight:400;color:var(--muted)">(user eh likhega tad flow start hoga)</span></label>
+              <input type="text" id="flow-trigger-input" placeholder="e.g. hello, start, menu, price" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px" oninput="this.value=this.value.toLowerCase()">
+            </div>
+            <div class="field">
+              <label>Description <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
+              <input type="text" id="flow-desc-input" placeholder="Eh flow ki karda hai..." style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px">
+            </div>
+            <div style="display:flex;gap:10px;justify-content:flex-end">
+              <button class="btn btn-outline" onclick="closeCreateFlowModal()">Cancel</button>
+              <button class="btn btn-green" onclick="saveFlowMeta()">💾 Save Karo</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ADD/EDIT NODE MODAL -->
+      <div id="node-modal" class="modal-overlay hidden" onclick="if(event.target===this)closeNodeModal()">
+        <div class="modal-box" style="max-width:520px">
+          <div class="modal-header">
+            <div class="modal-title" id="node-modal-title">Node Add Karo</div>
+            <button class="modal-close" onclick="closeNodeModal()">✕</button>
+          </div>
+          <div style="padding:20px;display:flex;flex-direction:column;gap:14px">
+            <input type="hidden" id="edit-node-id">
+            <div class="field">
+              <label>Node Type *</label>
+              <select id="node-type-select" onchange="onNodeTypeChange()" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px">
+                <option value="message">💬 Message — text bhejo</option>
+                <option value="condition">🔀 Condition — user reply check karo</option>
+                <option value="end">🛑 End — flow khatam karo</option>
+              </select>
+            </div>
+            <!-- Message fields -->
+            <div id="node-message-fields">
+              <div class="field">
+                <label>Message Text *</label>
+                <textarea id="node-text" rows="4" placeholder="Jo message user nu jaega... Variables: {{name}}" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;resize:vertical;font-size:13px"></textarea>
+              </div>
+              <div class="field">
+                <label>Delay (seconds) <span style="font-weight:400;color:var(--muted)">(pehle wait karo)</span></label>
+                <input type="number" id="node-delay" value="0" min="0" max="60" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px">
+              </div>
+            </div>
+            <!-- Condition fields -->
+            <div id="node-condition-fields" class="hidden">
+              <div class="alert alert-info" style="font-size:12px;margin-bottom:10px">
+                User da jawab (reply) check karo te alag-alag nodes te bhejo. Har condition add karo neeche.
+              </div>
+              <div id="conditions-editor" style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px"></div>
+              <button class="btn btn-outline btn-sm" onclick="addConditionRow()">+ Condition Add Karo</button>
+              <div class="field" style="margin-top:12px">
+                <label>Fallback Node <span style="font-weight:400;color:var(--muted)">(koi match na hove tad)</span></label>
+                <select id="node-fallback-select" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px">
+                  <option value="">— End (koi fallback nahi) —</option>
+                </select>
+              </div>
+            </div>
+            <!-- End fields -->
+            <div id="node-end-fields" class="hidden">
+              <div class="field">
+                <label>Goodbye Message <span style="font-weight:400;color:var(--muted)">(optional)</span></label>
+                <textarea id="node-end-text" rows="2" placeholder="Shukriya! Dobara zaroor aana 😊" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;resize:vertical;font-size:13px"></textarea>
+              </div>
+            </div>
+            <!-- Next node for message type -->
+            <div id="node-next-field">
+              <div class="field">
+                <label>Next Node <span style="font-weight:400;color:var(--muted)">(eh message bhej ke kidhar jaana hai)</span></label>
+                <select id="node-next-select" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px">
+                  <option value="">— End (flow khatam) —</option>
+                </select>
+              </div>
+            </div>
+            <div style="display:flex;gap:10px;justify-content:flex-end">
+              <button class="btn btn-outline" onclick="closeNodeModal()">Cancel</button>
+              <button class="btn btn-green" onclick="saveNode()">💾 Node Save Karo</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CHATBOT -->
+      <div id="page-chatbot" class="hidden">
+        <div class="page-header-row">
+          <div class="page-header">
+            <h2>🤖 Chatbot</h2>
+            <p>Keyword-based auto-reply system — incoming messages te automatic jawab</p>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;margin-top:4px">
+            <span style="font-size:13px;color:var(--muted)" id="bot-status-label">Bot: OFF</span>
+            <label class="bot-toggle-wrap">
+              <input type="checkbox" id="bot-enabled-toggle" onchange="toggleBot(this.checked)">
+              <span class="bot-toggle-track"><span class="bot-toggle-thumb"></span></span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Welcome / Fallback -->
+        <div class="card" style="margin-top:16px">
+          <div class="card-title">⚙️ Bot Settings</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+            <div class="field">
+              <label>Welcome Message <span style="font-weight:400;color:var(--muted)">(naye contact lai)</span></label>
+              <textarea id="bot-welcome" rows="3" placeholder="Sat Sri Akal! Main WA Bot aan. Apna sawaal likho..." style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;resize:vertical;font-size:13px"></textarea>
+              <p style="font-size:11px;color:var(--muted);margin-top:4px">Pehli baar message karne wale contacts nu eh bheja jaanda hai</p>
+            </div>
+            <div class="field">
+              <label>Fallback Message <span style="font-weight:400;color:var(--muted)">(koi rule match na hove)</span></label>
+              <textarea id="bot-fallback" rows="3" placeholder="Sorry, main eh samajh nahi sakeya. Please team naal contact karo..." style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;resize:vertical;font-size:13px"></textarea>
+              <p style="font-size:11px;color:var(--muted);margin-top:4px">Jado koi rule match nahi karda tad eh message janda hai</p>
+            </div>
+          </div>
+          <div style="margin-top:12px">
+            <button class="btn btn-green" onclick="saveBotSettings()">💾 Settings Save Karo</button>
+          </div>
+        </div>
+
+        <!-- Rules -->
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+            <div class="card-title" style="margin:0">📋 Auto-Reply Rules</div>
+            <button class="btn btn-green" onclick="openRuleModal()">+ Rule Add Karo</button>
+          </div>
+          <div id="bot-rules-list">
+            <div class="empty"><div class="empty-icon">🤖</div><p>Abhi koi rule nahi. Pehla rule add karo!</p></div>
+          </div>
+        </div>
+
+        <!-- How it works -->
+        <div class="card" style="background:#f0fdf4;border-color:#bbf7d0">
+          <div class="card-title">💡 Chatbot Kaise Kaam Karda Hai?</div>
+          <ol style="padding-left:18px;font-size:13px;color:var(--muted);line-height:1.9">
+            <li>Koi WhatsApp message bhejda hai</li>
+            <li>Bot <strong>upar to neeche</strong> rules check karda hai</li>
+            <li>Pehla matching rule milda — oh reply bhejda hai</li>
+            <li>Koi rule match nahi kita — Fallback message janda hai</li>
+            <li>Brand new contact — Welcome message janda hai (agar set hove)</li>
+          </ol>
+          <div style="margin-top:10px;font-size:12px;color:var(--muted)">
+            <strong>Match Types:</strong>
+            &nbsp;• <code>Contains</code>: message vich keyword hove &nbsp;
+            • <code>Exact</code>: poora message exactly match hove &nbsp;
+            • <code>Starts With</code>: message eh word naal shuru hove
+          </div>
+        </div>
+      </div>
+
+      <!-- CHATBOT RULE MODAL -->
+      <div id="rule-modal" class="modal-overlay hidden" onclick="if(event.target===this)closeRuleModal()">
+        <div class="modal-box" style="max-width:480px">
+          <div class="modal-header">
+            <div class="modal-title" id="rule-modal-title">Rule Add Karo</div>
+            <button class="modal-close" onclick="closeRuleModal()">✕</button>
+          </div>
+          <div style="padding:20px;display:flex;flex-direction:column;gap:14px">
+            <input type="hidden" id="rule-edit-id">
+            <div class="field">
+              <label>Keyword / Phrase *</label>
+              <input type="text" id="rule-keyword" placeholder="e.g. hello, price, help, order" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px">
+              <p style="font-size:11px;color:var(--muted);margin-top:4px">Jo word incoming message vich hona chahida (case-insensitive)</p>
+            </div>
+            <div class="field">
+              <label>Match Type</label>
+              <select id="rule-match-type" style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px">
+                <option value="contains">Contains — message vich keyword hove</option>
+                <option value="exact">Exact — poora message match hove</option>
+                <option value="startsWith">Starts With — message eh naal shuru hove</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Auto-Reply Message *</label>
+              <textarea id="rule-reply" rows="4" placeholder="Eh reply bheja jaanda hai jado keyword match hove..." style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;resize:vertical;font-size:13px"></textarea>
+            </div>
+            <div style="display:flex;gap:10px;justify-content:flex-end;padding-top:4px">
+              <button class="btn btn-outline" onclick="closeRuleModal()">Cancel</button>
+              <button class="btn btn-green" onclick="saveRule()">💾 Save Karo</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SETTINGS -->
+      <div id="page-settings" class="hidden">
+        <div class="page-header">
+          <h2>Settings</h2>
+          <p>WhatsApp Business API configure karo</p>
+        </div>
+        <div class="card">
+          <div class="card-title">📱 WhatsApp Business API (Meta)</div>
+          <div class="alert alert-info">
+            💡 <strong>Setup karna hai?</strong> <a href="https://developers.facebook.com/docs/whatsapp/cloud-api" target="_blank">developers.facebook.com</a> te jaake WhatsApp Cloud API setup karo.
+          </div>
+          <div class="form-row">
+            <div class="field">
+              <label>Phone Number ID *</label>
+              <input type="text" id="s-phone-id" placeholder="123456789012345" />
+            </div>
+            <div class="field">
+              <label>WhatsApp Business Account ID</label>
+              <input type="text" id="s-waba-id" placeholder="987654321098765" />
+            </div>
+            <div class="field form-full">
+              <label>Access Token (Permanent) *</label>
+              <input type="password" id="s-token" placeholder="EAAxxxxxxxxxxxxxxxxxxxxxx..." />
+            </div>
+            <div class="field">
+              <label>API Version</label>
+              <select id="s-api-ver">
+                <option value="v20.0">v20.0 (Latest)</option>
+                <option value="v19.0">v19.0</option>
+                <option value="v18.0">v18.0</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Webhook Verify Token</label>
+              <input type="text" id="s-webhook" placeholder="aapda-secret-token" />
+            </div>
+          </div>
+          <div class="alert alert-info" style="margin-top:4px">
+            🔗 <strong>Webhook URL:</strong> <code id="webhook-url-display" style="user-select:all;background:rgba(0,0,0,.05);padding:2px 6px;border-radius:4px"></code>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
+            <button class="btn btn-outline" onclick="testConnection()">🔌 Connection Test Karo</button>
+            <button class="btn btn-green" onclick="saveSettings()">💾 Settings Save Karo</button>
+          </div>
+          <div id="conn-result" class="hidden" style="margin-top:12px"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">👤 Account Settings</div>
+          <div class="form-row">
+            <div class="field">
+              <label>Naam</label>
+              <input type="text" id="s-name" placeholder="Admin" />
+            </div>
+            <div class="field">
+              <label>Email</label>
+              <input type="email" id="s-email" placeholder="admin@example.com" />
+            </div>
+            <div class="field form-full">
+              <label>Naya Password (khaali rakho jeker change nahi karna)</label>
+              <input type="password" id="s-password" placeholder="••••••••" />
+            </div>
+          </div>
+          <button class="btn btn-green" onclick="saveProfile()">💾 Profile Save Karo</button>
+        </div>
+        <div class="card">
+          <div class="card-title">ℹ️ System Info</div>
+          <div style="font-size:13px;display:flex;flex-direction:column;gap:8px;color:var(--muted)">
+            <div>📦 Version: <strong style="color:var(--text)">WA Bulk Sender v2.0</strong></div>
+            <div>🔗 Backend: <strong style="color:var(--text)" id="api-url-display">—</strong></div>
+            <div>🛡️ Default Login: <strong style="color:var(--text)">admin@example.com / admin123</strong></div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- CAMPAIGN DETAIL MODAL -->
+<div class="modal-overlay hidden" id="camp-modal" onclick="if(event.target===this)closeCampModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-title">Campaign Details</div>
+      <button class="modal-close" onclick="closeCampModal()">✕</button>
+    </div>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<!-- TEMPLATE MODAL -->
+<div class="modal-overlay hidden" id="tpl-modal" onclick="if(event.target===this)closeTplModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="tpl-modal-title">Naya Template</div>
+      <button class="modal-close" onclick="closeTplModal()">✕</button>
+    </div>
+    <div>
+      <input type="hidden" id="tpl-edit-id" />
+      <div class="form-row">
+        <div class="field">
+          <label>Template Naam *</label>
+          <input type="text" id="tpl-name" placeholder="Diwali Offer" />
+        </div>
+        <div class="field">
+          <label>Category</label>
+          <select id="tpl-cat">
+            <option value="general">📄 General</option>
+            <option value="promotional">🛍️ Promotional</option>
+            <option value="transactional">🔔 Transactional</option>
+            <option value="greeting">👋 Greeting</option>
+            <option value="support">🛠️ Support</option>
+          </select>
+        </div>
+      </div>
+      <div class="field" style="margin-bottom:14px">
+        <label>Message Type</label>
+        <select id="tpl-msg-type" onchange="tplTypeChange(this.value)" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px">
+          <option value="text">📝 Text</option>
+          <option value="image">🖼️ Image + Caption</option>
+          <option value="template">📋 WA Template</option>
+        </select>
+      </div>
+      <div id="tpl-text-fields">
+        <div class="field" style="margin-bottom:14px">
+          <label>Message Text *</label>
+          <textarea id="tpl-msg-text" rows="5" placeholder="Sat Sri Akal! {{name}}, aapnu special offer hai..."></textarea>
+        </div>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:14px">💡 {{name}}, {{phone}} variables use kar sakte ho</p>
+      </div>
+      <div id="tpl-image-fields" class="hidden">
+        <div class="field" style="margin-bottom:14px">
+          <label>Image URL</label>
+          <input type="text" id="tpl-img-url" placeholder="https://example.com/offer.jpg" />
+        </div>
+        <div class="field" style="margin-bottom:14px">
+          <label>Caption</label>
+          <textarea id="tpl-img-caption" rows="3" placeholder="Image caption..."></textarea>
+        </div>
+      </div>
+      <div id="tpl-wa-fields" class="hidden">
+        <div class="field" style="margin-bottom:14px">
+          <label>WhatsApp Template Name *</label>
+          <input type="text" id="tpl-wa-name" placeholder="hello_world" />
+        </div>
+        <div class="field" style="margin-bottom:14px">
+          <label>Language Code</label>
+          <input type="text" id="tpl-language" placeholder="en_US" value="en_US" />
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button class="btn btn-outline" onclick="closeTplModal()">Cancel</button>
+        <button class="btn btn-green" onclick="saveTpl()">💾 Save Template</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- NEW CHAT MODAL -->
+<div class="modal-overlay hidden" id="new-chat-modal" onclick="if(event.target===this)closeNewChatModal()">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header">
+      <div class="modal-title">Naya Chat</div>
+      <button class="modal-close" onclick="closeNewChatModal()">✕</button>
+    </div>
+    <div>
+      <div class="field" style="margin-bottom:14px">
+        <label>Phone Number *</label>
+        <input type="text" id="new-chat-phone" placeholder="+91 98765 43210" />
+      </div>
+      <div class="field" style="margin-bottom:14px">
+        <label>Message *</label>
+        <textarea id="new-chat-message" rows="4" placeholder="Sat Sri Akal!"></textarea>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button class="btn btn-outline" onclick="closeNewChatModal()">Cancel</button>
+        <button class="btn btn-green" onclick="startNewChat()">📤 Send Karo</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ADD CONTACT MODAL -->
+<div class="modal-overlay hidden" id="add-contact-modal" onclick="if(event.target===this)closeAddContactModal()">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header">
+      <div class="modal-title">Contact Add Karo</div>
+      <button class="modal-close" onclick="closeAddContactModal()">✕</button>
+    </div>
+    <div>
+      <div class="field" style="margin-bottom:14px">
+        <label>Phone Number *</label>
+        <input type="text" id="add-phone" placeholder="+91 98765 43210" />
+      </div>
+      <div class="field" style="margin-bottom:14px">
+        <label>Naam (optional)</label>
+        <input type="text" id="add-name" placeholder="Gurpreet Singh" />
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button class="btn btn-outline" onclick="closeAddContactModal()">Cancel</button>
+        <button class="btn btn-green" onclick="addContact()">➕ Add Karo</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CHAT TEMPLATE SEND MODAL -->
+<div class="modal-overlay hidden" id="chat-tpl-modal" onclick="if(event.target===this)closeChatTplModal()">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <div class="modal-title">Template Bhejo</div>
+      <button class="modal-close" onclick="closeChatTplModal()">✕</button>
+    </div>
+    <div>
+      <div class="field" style="margin-bottom:14px">
+        <label>Template Choose Karo</label>
+        <select id="chat-tpl-select" onchange="previewChatTpl(this.value)" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px">
+          <option value="">— Template select karo —</option>
+        </select>
+      </div>
+      <div id="chat-tpl-preview" class="hidden" style="background:var(--bg);border-radius:8px;padding:12px;margin-bottom:14px;font-size:13px;line-height:1.5;white-space:pre-wrap"></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button class="btn btn-outline" onclick="closeChatTplModal()">Cancel</button>
+        <button class="btn btn-green" onclick="sendChatTemplate()">📤 Bhejo</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- META TEMPLATE SUBMIT MODAL -->
+<div class="modal-overlay hidden" id="meta-tpl-modal" onclick="if(event.target===this)closeMetaTplModal()">
+  <div class="modal" style="max-width:640px">
+    <div class="modal-header">
+      <div class="modal-title">📤 Meta nu Template Submit Karo</div>
+      <button class="modal-close" onclick="closeMetaTplModal()">✕</button>
+    </div>
+
+    <div class="alert alert-info" style="margin-bottom:16px">
+      💡 Template name <strong>lowercase + underscore</strong> mein hona chahida (jaise: <code>diwali_offer_2025</code>).
+      Meta 24-48 ghante mein approve karda hai.
+    </div>
+
+    <div class="form-row">
+      <div class="field">
+        <label>Template Name * <span style="font-weight:400;color:var(--muted)">(lowercase_underscore)</span></label>
+        <input type="text" id="mt-name" placeholder="diwali_offer_2025" oninput="this.value=this.value.toLowerCase().replace(/[^a-z0-9_]/g,'')" />
+      </div>
+      <div class="field">
+        <label>Category *</label>
+        <select id="mt-category">
+          <option value="MARKETING">🛍️ MARKETING</option>
+          <option value="UTILITY">🔔 UTILITY</option>
+          <option value="AUTHENTICATION">🔐 AUTHENTICATION</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Language *</label>
+        <select id="mt-language">
+          <option value="en_US">English (US)</option>
+          <option value="en_GB">English (UK)</option>
+          <option value="pa">Punjabi</option>
+          <option value="hi">Hindi</option>
+          <option value="ur">Urdu</option>
+          <option value="gu">Gujarati</option>
+          <option value="ta">Tamil</option>
+          <option value="te">Telugu</option>
+          <option value="mr">Marathi</option>
+          <option value="bn">Bengali</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Header Type (optional)</label>
+        <select id="mt-header-type" onchange="toggleMetaHeader(this.value)">
+          <option value="">— Koi Header Nahi —</option>
+          <option value="text">📝 Text Header</option>
+          <option value="IMAGE">🖼️ Image</option>
+          <option value="VIDEO">🎥 Video</option>
+          <option value="DOCUMENT">📄 Document</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="mt-header-text-row" class="field hidden" style="margin-bottom:14px">
+      <label>Header Text (max 60 chars)</label>
+      <input type="text" id="mt-header-text" maxlength="60" placeholder="Special Offer!" />
+    </div>
+
+    <div class="field" style="margin-bottom:6px">
+      <label>Body Text * <span style="font-weight:400;color:var(--muted)">(max 1024 chars)</span></label>
+      <textarea id="mt-body" rows="5" maxlength="1024" placeholder="Sat Sri Akal {{1}}! Saanu khushi hai ke aapnu aaj 20% off mil raha hai. Offer sirf {{2}} tak valid hai."></textarea>
+    </div>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:14px">
+      💡 Variables layi <strong>&#123;&#123;1&#125;&#125;</strong>, <strong>&#123;&#123;2&#125;&#125;</strong> etc. use karo ({{1}} = pehla variable, {{2}} = doosra)
+    </p>
+
+    <div class="field" style="margin-bottom:14px">
+      <label>Footer Text (optional, max 60 chars)</label>
+      <input type="text" id="mt-footer" maxlength="60" placeholder="Reply STOP to unsubscribe" />
+    </div>
+
+    <!-- BUTTONS SECTION -->
+    <div style="margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <label style="font-size:12px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">Buttons (optional, max 3)</label>
+        <button class="btn btn-outline btn-sm" onclick="addMetaBtn()">+ Button Add Karo</button>
+      </div>
+      <div id="mt-buttons-list" style="display:flex;flex-direction:column;gap:8px"></div>
+    </div>
+
+    <!-- PREVIEW -->
+    <div style="margin-bottom:16px">
+      <div style="font-size:12px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Preview</div>
+      <div id="mt-preview" style="background:#e5ddd5;border-radius:10px;padding:12px 16px;max-width:320px">
+        <div id="mt-preview-header" style="font-weight:700;font-size:14px;margin-bottom:4px;display:none"></div>
+        <div id="mt-preview-body" style="font-size:13px;line-height:1.5;background:#fff;padding:10px 12px;border-radius:8px;white-space:pre-wrap">Body text yahan aayega...</div>
+        <div id="mt-preview-footer" style="font-size:11px;color:var(--muted);margin-top:4px;display:none"></div>
+        <div id="mt-preview-btns" style="margin-top:8px;display:flex;flex-direction:column;gap:4px"></div>
+      </div>
+    </div>
+
+    <div id="mt-submit-result" class="hidden" style="margin-bottom:12px"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn btn-outline" onclick="closeMetaTplModal()">Cancel</button>
+      <button class="btn btn-green" id="mt-submit-btn" onclick="submitMetaTemplate()">📤 Meta nu Submit Karo</button>
+    </div>
+  </div>
+</div>
+
+<!-- META TEMPLATE DETAIL MODAL -->
+<div class="modal-overlay hidden" id="meta-detail-modal" onclick="if(event.target===this)this.classList.add('hidden')">
+  <div class="modal" style="max-width:580px">
+    <div class="modal-header">
+      <div class="modal-title" id="meta-detail-title">Template Details</div>
+      <button class="modal-close" onclick="document.getElementById('meta-detail-modal').classList.add('hidden')">✕</button>
+    </div>
+    <div id="meta-detail-body"></div>
+  </div>
+</div>
+
+<script>
+const API = (window.location.protocol === 'file:' || window.location.hostname === 'localhost')
+  ? 'http://localhost:5000/api'
+  : window.location.origin + '/api';
+// Auto-detect API URL — works for localhost, VPS direct port, and Nginx proxy
+let TOKEN = localStorage.getItem('wa_token') || '';
+let currentUser = JSON.parse(localStorage.getItem('wa_user') || '{}');
+let currentPage = 'dashboard';
+let contactPage = 1;
+let contactSearch = '';
+let contactStatusFilter = '';
+let uploadedImageUrl = '';
+let msgType = 'text';
+let statsInterval = null;
+let chatPollInterval = null;
+
+// Chat state
+let allThreads = [];
+let filteredThreads = [];
+let activeChatPhone = '';
+let activeChatName = '';
+let allTemplates = [];
+let tplCatFilter = '';
+
+// Meta templates state
+let allMetaTemplates = [];
+let metaTplFilter = '';
+let metaBtnCount = 0;
+
+// ── TOAST ──────────────────────────────────────────────────────────────────────
+function toast(msg, type='info') {
+  const d = document.createElement('div');
+  d.className = `toast ${type}`;
+  d.textContent = (type==='success'?'✅ ':type==='error'?'❌ ':'ℹ️ ') + msg;
+  document.getElementById('toast-container').appendChild(d);
+  setTimeout(() => d.remove(), 3500);
+}
+
+// ── API HELPER ─────────────────────────────────────────────────────────────────
+async function api(method, path, body, isForm=false) {
+  const opts = { method, headers: { Authorization: `Bearer ${TOKEN}` } };
+  if (body && !isForm) { opts.headers['Content-Type'] = 'application/json'; opts.body = JSON.stringify(body); }
+  else if (isForm) opts.body = body;
+  const r = await fetch(API + path, opts);
+  const data = await r.json();
+  if (!r.ok) throw new Error(data.error || 'Kuch galat hoya');
+  return data;
+}
+
+// ── AUTH ───────────────────────────────────────────────────────────────────────
+async function doLogin() {
+  const email = document.getElementById('li-email').value.trim();
+  const pass = document.getElementById('li-pass').value;
+  const btn = document.getElementById('li-btn');
+  if (!email || !pass) { toast('Email te password dono bharo', 'error'); return; }
+  btn.innerHTML = '<div class="spinner"></div> Login ho raha...';
+  btn.disabled = true;
+  try {
+    const d = await api('POST', '/login', { email, password: pass });
+    TOKEN = d.token; currentUser = d.user;
+    localStorage.setItem('wa_token', TOKEN);
+    localStorage.setItem('wa_user', JSON.stringify(currentUser));
+    document.getElementById('login-page').classList.add('hidden');
+    document.getElementById('app').classList.remove('hidden');
+    initApp();
+    toast('Login successful!', 'success');
+  } catch(e) { toast(e.message, 'error'); }
+  finally { btn.innerHTML = '🔐 Login Karo'; btn.disabled = false; }
+}
+
+function doLogout() {
+  TOKEN = ''; localStorage.removeItem('wa_token'); localStorage.removeItem('wa_user');
+  document.getElementById('app').classList.add('hidden');
+  document.getElementById('login-page').classList.remove('hidden');
+  if(statsInterval) clearInterval(statsInterval);
+  if(chatPollInterval) clearInterval(chatPollInterval);
+}
+
+function initApp() {
+  document.getElementById('nav-name').textContent = currentUser.name || 'Admin';
+  document.getElementById('nav-initials').textContent = (currentUser.name||'Ad').slice(0,2).toUpperCase();
+  document.getElementById('api-url-display').textContent = API;
+  document.getElementById('webhook-url-display').textContent = API.replace('/api','') + '/api/webhook';
+  loadStats();
+  loadDashboard();
+  loadSettings();
+  loadTemplates();
+  statsInterval = setInterval(loadStats, 10000);
+}
+
+// ── NAVIGATION ─────────────────────────────────────────────────────────────────
+function showPage(name, el) {
+  document.querySelectorAll('[id^="page-"]').forEach(p => p.classList.add('hidden'));
+  document.getElementById('page-' + name).classList.remove('hidden');
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  if(el) el.classList.add('active');
+  currentPage = name;
+
+  const content = document.getElementById('main-content');
+  if(name === 'chat') { content.style.padding = '0'; content.style.maxWidth = '100%'; content.style.overflow = 'hidden'; }
+  else { content.style.padding = '24px'; content.style.maxWidth = '1200px'; content.style.overflow = ''; }
+
+  if(name==='dashboard') loadDashboard();
+  if(name==='contacts') loadContacts();
+  if(name==='campaigns') loadCampaigns();
+  if(name==='reports') loadReports();
+  if(name==='settings') loadSettings();
+  if(name==='send') { loadContactCount(); loadTemplatesForSend(); }
+  if(name==='chat') { loadChatThreads(); if(!chatPollInterval) chatPollInterval = setInterval(loadChatThreads, 8000); }
+  else { if(chatPollInterval) { clearInterval(chatPollInterval); chatPollInterval = null; } }
+  if(name==='templates') loadTemplates();
+  if(name==='meta-templates') loadMetaTemplates();
+  if(name==='chatbot') loadChatbot();
+  if(name==='flows') loadFlows();
+}
+
+// ── STATS ──────────────────────────────────────────────────────────────────────
+async function loadStats() {
+  try {
+    const d = await api('GET', '/stats');
+    document.getElementById('s-contacts').textContent = d.totalContacts.toLocaleString();
+    document.getElementById('s-sent').textContent = d.totalSent.toLocaleString();
+    document.getElementById('s-failed').textContent = d.totalFailed.toLocaleString();
+    document.getElementById('s-active').textContent = d.activeCampaigns;
+    document.getElementById('s-chats').textContent = (d.totalChats||0).toLocaleString();
+    document.getElementById('s-unread').textContent = (d.unreadChats||0);
+    const unread = d.unreadChats || 0;
+    const navBadge = document.getElementById('nav-unread');
+    const navWrap = document.getElementById('nav-unread-wrap');
+    const sidebarBadge = document.getElementById('sidebar-unread');
+    navBadge.textContent = unread; sidebarBadge.textContent = unread;
+    if(unread > 0) { navWrap.classList.remove('hidden'); sidebarBadge.classList.remove('hidden'); }
+    else { navWrap.classList.add('hidden'); sidebarBadge.classList.add('hidden'); }
+  } catch {}
+}
+
+// ── DASHBOARD ─────────────────────────────────────────────────────────────────
+async function loadDashboard() {
+  try {
+    const camps = await api('GET', '/campaigns');
+    const recent = camps.slice(0,5);
+    const el = document.getElementById('dash-campaigns');
+    if(!recent.length) { el.innerHTML = '<div class="empty"><div class="empty-icon">📭</div><p>Abhi koi campaign nahi</p></div>'; return; }
+    el.innerHTML = recent.map(c => campCard(c, true)).join('');
+  } catch {}
+}
+
+async function loadContactCount() {
+  try {
+    const d = await api('GET', '/contacts?page=1&limit=1');
+    document.getElementById('contact-count-hint').textContent = (d.total||0) + ' contacts';
+  } catch {}
+}
+
+// ── EXCEL UPLOAD ───────────────────────────────────────────────────────────────
+async function handleExcelUpload(input) {
+  const file = input.files[0]; if(!file) return;
+  const fd = new FormData(); fd.append('file', file);
+  try {
+    const d = await api('POST', '/contacts/import', fd, true);
+    toast(d.added + ' contacts import hoe!', 'success');
+    loadContacts(); loadStats();
+  } catch(e) { toast(e.message, 'error'); }
+  input.value = '';
+}
+
+async function quickImport(input) {
+  const file = input.files[0]; if(!file) return;
+  const r = document.getElementById('quick-import-result');
+  const fd = new FormData(); fd.append('file', file);
+  try {
+    const d = await api('POST', '/contacts/import', fd, true);
+    r.innerHTML = `<div class="alert alert-success">✅ <strong>${d.added} contacts</strong> import hoe! ${d.skipped?d.skipped+' skip.':''}</div>`;
+    r.classList.remove('hidden');
+    loadStats(); loadContactCount();
+    toast(d.added + ' contacts import hoe!', 'success');
+  } catch(e) {
+    r.innerHTML = `<div class="alert alert-error">❌ ${e.message}</div>`;
+    r.classList.remove('hidden');
+  }
+  input.value = '';
+}
+
+function handleDrop(e) {
+  e.preventDefault();
+  const file = e.dataTransfer.files[0];
+  if(file) { const inp = document.getElementById('excel-file'); const dt = new DataTransfer(); dt.items.add(file); inp.files = dt.files; handleExcelUpload(inp); }
+}
+
+async function handleImageUpload(input) {
+  const file = input.files[0]; if(!file) return;
+  const status = document.getElementById('img-upload-status');
+  status.textContent = '⏳ Image upload ho rahi hai...'; status.classList.remove('hidden');
+  const fd = new FormData(); fd.append('image', file);
+  try {
+    const d = await api('POST', '/upload-image', fd, true);
+    const baseUrl = (window.location.protocol === 'file:' || window.location.hostname === 'localhost')
+      ? 'http://localhost:5000' : window.location.origin;
+    uploadedImageUrl = baseUrl + d.url;
+    status.textContent = '✅ ' + d.filename + ' upload hoi!';
+    toast('Image upload successful!', 'success');
+  } catch(e) { status.textContent = '❌ Upload fail'; toast(e.message, 'error'); }
+  input.value = '';
+}
+
+function switchMsgTab(tab, btn) {
+  ['text','image','template'].forEach(t => document.getElementById('tab-'+t).classList.add('hidden'));
+  document.getElementById('tab-'+tab).classList.remove('hidden');
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  msgType = tab;
+}
+
+function applyTemplate(id) {
+  if(!id) return;
+  const tpl = allTemplates.find(t => t.id === id); if(!tpl) return;
+  msgType = tpl.messageType;
+  const tabMap = {text:0,image:1,template:2};
+  const tabBtns = document.querySelectorAll('.tab-btn');
+  tabBtns.forEach((b,i) => b.classList.toggle('active', i === (tabMap[tpl.messageType]||0)));
+  ['text','image','template'].forEach(t => document.getElementById('tab-'+t).classList.add('hidden'));
+  document.getElementById('tab-'+tpl.messageType)?.classList.remove('hidden');
+  if(tpl.messageType === 'text') { document.getElementById('msg-text').value = tpl.messageText || ''; }
+  else if(tpl.messageType === 'image') {
+    uploadedImageUrl = tpl.imageUrl || '';
+    const s = document.getElementById('img-upload-status');
+    s.textContent = uploadedImageUrl ? '✅ Image set from template' : ''; s.classList.toggle('hidden', !uploadedImageUrl);
+    document.getElementById('img-caption').value = tpl.imageCaption || '';
+  } else { document.getElementById('template-name').value = tpl.templateName || ''; }
+  toast('Template "' + tpl.name + '" apply hoya!', 'success');
+}
+
+async function startCampaign() {
+  const name = document.getElementById('camp-name').value.trim();
+  const delay = parseInt(document.getElementById('camp-delay').value) || 3;
+  const scheduledAt = document.getElementById('camp-schedule').value;
+  const btn = document.getElementById('send-btn');
+  const result = document.getElementById('send-result');
+  if(!name) { toast('Campaign naam zaroori hai', 'error'); return; }
+  let body = { name, messageType: msgType, delaySeconds: delay, scheduledAt: scheduledAt || null };
+  if(msgType === 'text') {
+    const txt = document.getElementById('msg-text').value.trim();
+    if(!txt) { toast('Message text likho', 'error'); return; }
+    body.messageText = txt;
+  } else if(msgType === 'image') {
+    if(!uploadedImageUrl) { toast('Pehle image upload karo', 'error'); return; }
+    body.imageUrl = uploadedImageUrl;
+    body.imageCaption = document.getElementById('img-caption').value.trim();
+  } else {
+    const tName = document.getElementById('template-name').value.trim();
+    if(!tName) { toast('Template naam likho', 'error'); return; }
+    body.templateName = tName;
+  }
+  btn.innerHTML = '<div class="spinner"></div> Campaign start ho rahi hai...'; btn.disabled = true;
+  try {
+    const d = await api('POST', '/campaigns', body);
+    result.innerHTML = `<div class="alert alert-success">🚀 Campaign "${name}" shuru ho gaya! <strong>${d.totalContacts} contacts</strong> nu messages ja rahe aa.</div>`;
+    result.classList.remove('hidden');
+    toast('Campaign start ho gaya!', 'success');
+    document.getElementById('camp-name').value = ''; document.getElementById('msg-text').value = '';
+    loadStats();
+  } catch(e) {
+    result.innerHTML = `<div class="alert alert-error">❌ ${e.message}</div>`;
+    result.classList.remove('hidden');
+    toast(e.message, 'error');
+  }
+  btn.innerHTML = '🚀 Campaign Start Karo'; btn.disabled = false;
+}
+
+let searchDebounce;
+function searchContacts(val) { contactSearch = val; contactPage = 1; clearTimeout(searchDebounce); searchDebounce = setTimeout(loadContacts, 300); }
+function filterContacts() { contactStatusFilter = document.getElementById('contact-status-filter').value; contactPage = 1; loadContacts(); }
+
+async function loadContacts() {
+  const tbody = document.getElementById('contacts-body');
+  tbody.innerHTML = '<tr><td colspan="6" class="table-empty">⏳ Load ho raha hai...</td></tr>';
+  try {
+    const d = await api('GET', `/contacts?search=${encodeURIComponent(contactSearch)}&status=${contactStatusFilter}&page=${contactPage}&limit=20`);
+    if(!d.contacts.length) { tbody.innerHTML = '<tr><td colspan="6" class="table-empty">📭 Koi contact nahi mila</td></tr>'; document.getElementById('contact-pages').innerHTML=''; return; }
+    tbody.innerHTML = d.contacts.map((c,i) => `
+      <tr>
+        <td style="color:var(--muted)">${(contactPage-1)*20+i+1}</td>
+        <td><strong>${c.phone}</strong></td>
+        <td>${c.name || '<span style="color:var(--muted)">—</span>'}</td>
+        <td>${statusBadge(c.status)}</td>
+        <td style="color:var(--muted)">${formatDate(c.addedAt)}</td>
+        <td style="display:flex;gap:4px">
+          <button class="btn btn-outline btn-sm" title="Chat" onclick="openChatWith('${c.phone}','${(c.name||'').replace(/'/g,'&apos;')}')">💬</button>
+          <button class="btn btn-red btn-sm" onclick="deleteContact('${c.id}')">🗑️</button>
+        </td>
+      </tr>`).join('');
+    const totalPages = Math.ceil(d.total / 20);
+    document.getElementById('contact-pages').innerHTML = `<span style="color:var(--muted)">${d.total} contacts</span>
+      <button class="page-btn" onclick="contactPage=Math.max(1,contactPage-1);loadContacts()" ${contactPage===1?'disabled':''}>‹</button>
+      <button class="page-btn active">${contactPage}</button>
+      <span style="color:var(--muted)">/ ${totalPages}</span>
+      <button class="page-btn" onclick="contactPage=Math.min(${totalPages},contactPage+1);loadContacts()" ${contactPage===totalPages?'disabled':''}>›</button>`;
+  } catch(e) { tbody.innerHTML = `<tr><td colspan="6" class="table-empty">❌ ${e.message}</td></tr>`; }
+}
+
+async function deleteContact(id) {
+  if(!confirm('Eh contact delete karna hai?')) return;
+  try { await api('DELETE', '/contacts/' + id); loadContacts(); loadStats(); toast('Contact delete hoya', 'success'); } catch(e) { toast(e.message, 'error'); }
+}
+async function clearContacts() {
+  try { await api('DELETE', '/contacts'); loadContacts(); loadStats(); toast('Saare contacts delete hoe', 'success'); } catch(e) { toast(e.message, 'error'); }
+}
+
+function openAddContactModal() { document.getElementById('add-contact-modal').classList.remove('hidden'); document.getElementById('add-phone').focus(); }
+function closeAddContactModal() { document.getElementById('add-contact-modal').classList.add('hidden'); document.getElementById('add-phone').value = ''; document.getElementById('add-name').value = ''; }
+async function addContact() {
+  const phone = document.getElementById('add-phone').value.trim();
+  const name = document.getElementById('add-name').value.trim();
+  if(!phone) { toast('Phone number zaroori hai', 'error'); return; }
+  try { await api('POST', '/contacts/add', { phone, name }); closeAddContactModal(); loadContacts(); loadStats(); toast('Contact add hoya!', 'success'); }
+  catch(e) { toast(e.message, 'error'); }
+}
+
+function campCard(c, mini=false) {
+  const pct = c.totalContacts > 0 ? Math.round((c.sent + c.failed) / c.totalContacts * 100) : 0;
+  const dRate = (c.sent + c.failed) > 0 ? Math.round(c.sent / (c.sent + c.failed) * 100) : 0;
+  return `<div class="camp-item">
+    <div class="camp-top"><div class="camp-name">${c.name}</div>${campStatusBadge(c.status)}</div>
+    <div class="camp-meta">${formatDate(c.createdAt)} &nbsp;•&nbsp; ${msgTypeLabel(c.messageType)} &nbsp;•&nbsp; ${c.totalContacts} contacts &nbsp;•&nbsp; By: ${c.createdBy||'Admin'}</div>
+    <div class="progress"><div class="progress-fill" style="width:${pct}%"></div></div>
+    <div class="camp-stats">
+      <div class="cs cs-g">✅ ${c.sent} sent</div>
+      <div class="cs cs-r">❌ ${c.failed} failed</div>
+      <div class="cs cs-a">⏳ ${c.pending} pending</div>
+      <div style="margin-left:auto;font-size:11px;color:var(--muted)">${pct}% done · ${dRate}% delivery</div>
+    </div>
+    ${!mini ? `<div class="camp-actions">
+      <button class="btn btn-outline btn-sm" onclick="viewCampaign('${c.id}')">📋 Details</button>
+      ${c.status==='running'?`<button class="btn btn-outline btn-sm" onclick="pauseCamp('${c.id}')">⏸️ Pause</button>`:''}
+      ${c.status==='paused'?`<button class="btn btn-green btn-sm" onclick="resumeCamp('${c.id}')">▶️ Resume</button>`:''}
+      ${(c.status==='running'||c.status==='paused')?`<button class="btn btn-red btn-sm" onclick="cancelCamp('${c.id}')">🛑 Cancel</button>`:''}
+    </div>` : `<button class="btn btn-outline btn-sm" style="margin-top:8px" onclick="viewCampaign('${c.id}')">📋 Details dekho</button>`}
+  </div>`;
+}
+
+async function loadCampaigns() {
+  const el = document.getElementById('campaigns-list');
+  el.innerHTML = '<div class="empty"><div class="empty-icon">⏳</div><p>Load ho raha hai...</p></div>';
+  try {
+    const camps = await api('GET', '/campaigns');
+    if(!camps.length) { el.innerHTML = '<div class="empty"><div class="empty-icon">📭</div><p>Abhi koi campaign nahi</p></div>'; return; }
+    el.innerHTML = camps.map(c => campCard(c)).join('');
+  } catch(e) { el.innerHTML = `<div class="empty"><p>❌ ${e.message}</p></div>`; }
+}
+
+async function pauseCamp(id) { try { await api('PUT','/campaigns/'+id+'/pause'); loadCampaigns(); toast('Paused','success'); } catch(e) { toast(e.message,'error'); } }
+async function resumeCamp(id) { try { await api('PUT','/campaigns/'+id+'/resume'); loadCampaigns(); toast('Resumed','success'); } catch(e) { toast(e.message,'error'); } }
+async function cancelCamp(id) { if(!confirm('Cancel?')) return; try { await api('PUT','/campaigns/'+id+'/cancel'); loadCampaigns(); toast('Cancelled','success'); } catch(e) { toast(e.message,'error'); } }
+
+async function viewCampaign(id) {
+  document.getElementById('modal-title').textContent = 'Campaign Details';
+  document.getElementById('modal-body').innerHTML = '<div style="text-align:center;padding:20px">⏳</div>';
+  document.getElementById('camp-modal').classList.remove('hidden');
+  try {
+    const d = await api('GET', '/campaigns/' + id);
+    const msgs = d.messages || [];
+    const sent = msgs.filter(m=>m.status==='sent');
+    const failed = msgs.filter(m=>m.status==='failed');
+    document.getElementById('modal-title').textContent = d.name;
+    document.getElementById('modal-body').innerHTML = `
+      <div class="camp-meta" style="margin-bottom:12px">${formatDate(d.createdAt)} &nbsp;•&nbsp; ${msgTypeLabel(d.messageType)} &nbsp;•&nbsp; ${campStatusBadge(d.status)}</div>
+      ${d.messageText ? `<div style="background:var(--bg);border-radius:8px;padding:10px 12px;font-size:13px;margin-bottom:14px;white-space:pre-wrap">${d.messageText}</div>` : ''}
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px">
+        <div class="stat" style="padding:12px"><div class="stat-val" style="font-size:18px">${d.totalContacts}</div><div class="stat-lbl">Total</div></div>
+        <div class="stat" style="padding:12px;background:#e8f5e9"><div class="stat-val" style="font-size:18px;color:#2e7d32">${d.sent}</div><div class="stat-lbl">Sent</div></div>
+        <div class="stat" style="padding:12px;background:#ffebee"><div class="stat-val" style="font-size:18px;color:#c62828">${d.failed}</div><div class="stat-lbl">Failed</div></div>
+      </div>
+      ${failed.length ? `<div style="margin-bottom:12px"><strong>❌ Failed:</strong><div style="max-height:120px;overflow-y:auto;margin-top:6px;border:1px solid var(--border);border-radius:8px">${failed.map(m=>`<div style="padding:8px 12px;border-top:1px solid var(--border);font-size:12px">${m.phone} — <span style="color:#c62828">${m.error||'Unknown'}</span></div>`).join('')}</div></div>` : ''}
+      ${sent.length ? `<div><strong>✅ Delivered:</strong><div style="max-height:120px;overflow-y:auto;margin-top:6px;border:1px solid var(--border);border-radius:8px">${sent.map(m=>`<div style="padding:8px 12px;border-top:1px solid var(--border);font-size:12px">${m.phone} ${m.name?'('+m.name+')':''}</div>`).join('')}</div></div>` : ''}`;
+  } catch(e) { document.getElementById('modal-body').innerHTML = `<p style="color:red">❌ ${e.message}</p>`; }
+}
+function closeCampModal() { document.getElementById('camp-modal').classList.add('hidden'); }
+
+async function loadReports() {
+  try {
+    const [stats, camps] = await Promise.all([api('GET','/stats'), api('GET','/campaigns')]);
+    document.getElementById('r-campaigns').textContent = stats.totalCampaigns;
+    document.getElementById('r-sent').textContent = stats.totalSent.toLocaleString();
+    document.getElementById('r-failed').textContent = stats.totalFailed.toLocaleString();
+    const rate = stats.totalSent+stats.totalFailed > 0 ? Math.round(stats.totalSent/(stats.totalSent+stats.totalFailed)*100) : 0;
+    document.getElementById('r-rate').textContent = rate + '%';
+    const el = document.getElementById('report-campaigns');
+    if(!camps.length) { el.innerHTML = '<div class="empty"><div class="empty-icon">📭</div><p>Koi campaign nahi</p></div>'; return; }
+    el.innerHTML = '<div class="card"><div class="card-title">📋 Campaign Wise Report</div>' + camps.map(c => {
+      const dr = (c.sent+c.failed)>0 ? Math.round(c.sent/(c.sent+c.failed)*100) : 0;
+      return `<div style="padding:12px 0;border-top:1px solid var(--border)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><strong>${c.name}</strong><div style="display:flex;gap:6px">${campStatusBadge(c.status)}<span style="font-size:13px;font-weight:600;color:var(--gd)">${dr}%</span></div></div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:6px">${formatDate(c.createdAt)} • ${c.totalContacts} contacts</div>
+        <div class="progress"><div class="progress-fill" style="width:${dr}%"></div></div>
+        <div class="camp-stats" style="margin-top:6px"><div class="cs cs-g">✅ ${c.sent}</div><div class="cs cs-r">❌ ${c.failed}</div><div class="cs cs-a">⏳ ${c.pending}</div></div>
+      </div>`;
+    }).join('') + '</div>';
+  } catch {}
+}
+
+async function loadSettings() {
+  try {
+    const d = await api('GET', '/settings');
+    document.getElementById('s-phone-id').value = d.phoneNumberId || '';
+    document.getElementById('s-waba-id').value = d.wabaId || '';
+    document.getElementById('s-token').value = d.accessToken || '';
+    document.getElementById('s-webhook').value = d.webhookToken || '';
+    document.getElementById('s-api-ver').value = d.apiVersion || 'v20.0';
+    document.getElementById('s-name').value = currentUser.name || '';
+    document.getElementById('s-email').value = currentUser.email || '';
+  } catch {}
+}
+
+async function saveSettings() {
+  try {
+    await api('PUT', '/settings', {
+      phoneNumberId: document.getElementById('s-phone-id').value.trim(),
+      wabaId: document.getElementById('s-waba-id').value.trim(),
+      accessToken: document.getElementById('s-token').value.trim(),
+      webhookToken: document.getElementById('s-webhook').value.trim(),
+      apiVersion: document.getElementById('s-api-ver').value
+    });
+    toast('Settings save ho gayi!', 'success');
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function testConnection() {
+  const btn = event.target; btn.textContent = '⏳ Test ho raha...'; btn.disabled = true;
+  await saveSettings();
+  const el = document.getElementById('conn-result');
+  try {
+    const d = await api('POST', '/settings/test');
+    el.innerHTML = `<div class="alert alert-success">✅ Connection successful! Phone: <strong>${d.phone}</strong></div>`;
+    el.classList.remove('hidden');
+  } catch(e) {
+    el.innerHTML = `<div class="alert alert-error">❌ ${e.message}</div>`;
+    el.classList.remove('hidden');
+  }
+  btn.textContent = '🔌 Connection Test Karo'; btn.disabled = false;
+}
+
+async function saveProfile() {
+  try {
+    await api('PUT', '/profile', { name: document.getElementById('s-name').value, email: document.getElementById('s-email').value, password: document.getElementById('s-password').value || undefined });
+    toast('Profile save ho gaya!', 'success'); document.getElementById('s-password').value = '';
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+// ═══════════════════════════════════════════════════════
+// MY TEMPLATES
+// ═══════════════════════════════════════════════════════
+async function loadTemplates() {
+  try { allTemplates = await api('GET', '/templates'); renderTemplates(); } catch {}
+}
+
+function renderTemplates() {
+  const grid = document.getElementById('tpl-grid');
+  let list = allTemplates;
+  if(tplCatFilter) list = list.filter(t => t.category === tplCatFilter);
+  if(!list.length) { grid.innerHTML = '<div class="empty" style="grid-column:1/-1;padding:40px 20px"><div class="empty-icon">📝</div><p>Koi template nahi. Upar + Naya Template te click karo.</p></div>'; return; }
+  grid.innerHTML = list.map(t => `
+    <div class="tpl-card">
+      <div class="tpl-card-top">
+        <div><div class="tpl-name">${t.name}</div><div class="tpl-cat">${catLabel(t.category)} &nbsp;•&nbsp; ${msgTypeLabel(t.messageType)}</div></div>
+        <div class="tpl-actions">
+          <button class="btn btn-outline btn-sm" onclick="editTpl('${t.id}')" title="Edit">✏️</button>
+          <button class="btn btn-red btn-sm" onclick="deleteTpl('${t.id}')" title="Delete">🗑️</button>
+        </div>
+      </div>
+      <div class="tpl-preview">${t.messageText || t.imageCaption || t.templateName || '—'}</div>
+      <div class="tpl-footer">
+        <div class="tpl-meta">Used: ${t.usageCount||0}x &nbsp;•&nbsp; ${formatDateShort(t.createdAt)}</div>
+        <button class="btn btn-green btn-sm" onclick="useTplInCampaign('${t.id}')">🚀 Use</button>
+      </div>
+    </div>`).join('');
+}
+
+function filterTplCat(cat, el) {
+  tplCatFilter = cat;
+  document.querySelectorAll('.cat-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active'); renderTemplates();
+}
+
+function catLabel(c) { return {promotional:'🛍️ Promotional',transactional:'🔔 Transactional',greeting:'👋 Greeting',support:'🛠️ Support',general:'📄 General'}[c]||c; }
+
+function openTplModal(data) {
+  document.getElementById('tpl-modal-title').textContent = data ? 'Template Edit Karo' : 'Naya Template';
+  document.getElementById('tpl-edit-id').value = data?.id || '';
+  document.getElementById('tpl-name').value = data?.name || '';
+  document.getElementById('tpl-cat').value = data?.category || 'general';
+  document.getElementById('tpl-msg-type').value = data?.messageType || 'text';
+  document.getElementById('tpl-msg-text').value = data?.messageText || '';
+  document.getElementById('tpl-img-url').value = data?.imageUrl || '';
+  document.getElementById('tpl-img-caption').value = data?.imageCaption || '';
+  document.getElementById('tpl-wa-name').value = data?.templateName || '';
+  document.getElementById('tpl-language').value = data?.language || 'en_US';
+  tplTypeChange(data?.messageType || 'text');
+  document.getElementById('tpl-modal').classList.remove('hidden');
+}
+function closeTplModal() { document.getElementById('tpl-modal').classList.add('hidden'); }
+function tplTypeChange(val) {
+  document.getElementById('tpl-text-fields').classList.toggle('hidden', val !== 'text');
+  document.getElementById('tpl-image-fields').classList.toggle('hidden', val !== 'image');
+  document.getElementById('tpl-wa-fields').classList.toggle('hidden', val !== 'template');
+}
+async function saveTpl() {
+  const id = document.getElementById('tpl-edit-id').value;
+  const body = {
+    name: document.getElementById('tpl-name').value.trim(),
+    category: document.getElementById('tpl-cat').value,
+    messageType: document.getElementById('tpl-msg-type').value,
+    messageText: document.getElementById('tpl-msg-text').value.trim(),
+    imageUrl: document.getElementById('tpl-img-url').value.trim(),
+    imageCaption: document.getElementById('tpl-img-caption').value.trim(),
+    templateName: document.getElementById('tpl-wa-name').value.trim(),
+    language: document.getElementById('tpl-language').value.trim()
+  };
+  if(!body.name) { toast('Template naam zaroori hai', 'error'); return; }
+  try {
+    if(id) { await api('PUT', '/templates/'+id, body); toast('Template update hoya!','success'); }
+    else { await api('POST', '/templates', body); toast('Template save hoya!','success'); }
+    closeTplModal(); await loadTemplates();
+  } catch(e) { toast(e.message, 'error'); }
+}
+function editTpl(id) { const t = allTemplates.find(t => t.id === id); if(t) openTplModal(t); }
+async function deleteTpl(id) {
+  if(!confirm('Delete?')) return;
+  try { await api('DELETE', '/templates/'+id); await loadTemplates(); toast('Deleted','success'); } catch(e) { toast(e.message,'error'); }
+}
+function useTplInCampaign(id) {
+  showPage('send', document.querySelector('[data-page=send]'));
+  setTimeout(() => { document.getElementById('send-tpl-select').value = id; applyTemplate(id); }, 100);
+}
+function loadTemplatesForSend() {
+  const sel = document.getElementById('send-tpl-select');
+  sel.innerHTML = '<option value="">— Template select karo —</option>';
+  allTemplates.forEach(t => { const o = document.createElement('option'); o.value = t.id; o.textContent = t.name + ' (' + catLabel(t.category) + ')'; sel.appendChild(o); });
+}
+
+// ═══════════════════════════════════════════════════════
+// META WA TEMPLATES
+// ═══════════════════════════════════════════════════════
+async function loadMetaTemplates() {
+  const el = document.getElementById('meta-tpl-content');
+  const btn = document.getElementById('meta-refresh-btn');
+  btn.textContent = '⏳ Loading...'; btn.disabled = true;
+  el.innerHTML = '<div class="empty"><div class="empty-icon" style="font-size:32px">⏳</div><p>Meta te templates load ho rahe aa...</p></div>';
+  try {
+    const d = await api('GET', '/meta-templates');
+    allMetaTemplates = d.templates || [];
+    document.getElementById('meta-cred-warn').style.display = 'none';
+    renderMetaStats();
+    renderMetaTemplates();
+    toast('Meta templates load hoe – ' + allMetaTemplates.length + ' templates', 'success');
+  } catch(e) {
+    el.innerHTML = `<div class="alert alert-error">❌ ${e.message}<br><small>Settings mein WABA ID te Access Token check karo.</small></div>`;
+    if(e.message.includes('WABA') || e.message.includes('set karo')) document.getElementById('meta-cred-warn').style.display = 'flex';
+  }
+  btn.textContent = '🔄 Refresh'; btn.disabled = false;
+}
+
+function renderMetaStats() {
+  const approved = allMetaTemplates.filter(t => t.status === 'APPROVED').length;
+  const pending = allMetaTemplates.filter(t => t.status === 'PENDING').length;
+  const rejected = allMetaTemplates.filter(t => t.status === 'REJECTED').length;
+  document.getElementById('meta-stats').innerHTML = `
+    <div class="stat" style="padding:12px 16px;min-width:120px"><div class="stat-icon si-b" style="width:30px;height:30px;font-size:16px;margin-bottom:6px">📊</div><div class="stat-val" style="font-size:20px">${allMetaTemplates.length}</div><div class="stat-lbl">Total</div></div>
+    <div class="stat" style="padding:12px 16px;min-width:120px"><div class="stat-icon si-g" style="width:30px;height:30px;font-size:16px;margin-bottom:6px">✅</div><div class="stat-val" style="font-size:20px;color:#2e7d32">${approved}</div><div class="stat-lbl">Approved</div></div>
+    <div class="stat" style="padding:12px 16px;min-width:120px"><div class="stat-icon si-a" style="width:30px;height:30px;font-size:16px;margin-bottom:6px">⏳</div><div class="stat-val" style="font-size:20px;color:var(--amber)">${pending}</div><div class="stat-lbl">Pending</div></div>
+    <div class="stat" style="padding:12px 16px;min-width:120px"><div class="stat-icon si-r" style="width:30px;height:30px;font-size:16px;margin-bottom:6px">❌</div><div class="stat-val" style="font-size:20px;color:var(--red)">${rejected}</div><div class="stat-lbl">Rejected</div></div>`;
+}
+
+function filterMetaTpl(status, btn) {
+  metaTplFilter = status;
+  document.querySelectorAll('#page-meta-templates .tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderMetaTemplates();
+}
+
+function renderMetaTemplates() {
+  const el = document.getElementById('meta-tpl-content');
+  let list = allMetaTemplates;
+  if(metaTplFilter) list = list.filter(t => t.status === metaTplFilter);
+  if(!list.length) { el.innerHTML = '<div class="empty"><div class="empty-icon">📋</div><p>Koi template nahi is status mein</p></div>'; return; }
+
+  el.innerHTML = `<div class="table-wrap">
+    <table>
+      <thead><tr><th>Template Name</th><th>Category</th><th>Language</th><th>Status</th><th>Quality</th><th>Body Preview</th><th>Actions</th></tr></thead>
+      <tbody>
+        ${list.map(t => {
+          const bodyComp = t.components?.find(c => c.type === 'BODY');
+          const preview = (bodyComp?.text || '—').slice(0, 80);
+          return `<tr>
+            <td><strong>${t.name}</strong></td>
+            <td><span class="badge badge-b">${t.category || '—'}</span></td>
+            <td style="color:var(--muted)">${t.language || '—'}</td>
+            <td>${metaStatusBadge(t.status)}</td>
+            <td>${qualityBadge(t.quality_score)}</td>
+            <td style="max-width:200px;font-size:12px;color:var(--muted)">${preview}${(bodyComp?.text||'').length>80?'…':''}</td>
+            <td>
+              <div style="display:flex;gap:4px">
+                <button class="btn btn-outline btn-sm" onclick="viewMetaTemplate('${t.name}')">👁️ View</button>
+                <button class="btn btn-red btn-sm" onclick="deleteMetaTemplate('${t.name}')">🗑️</button>
+              </div>
+            </td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>
+  </div>`;
+}
+
+function metaStatusBadge(s) {
+  const map = { APPROVED:'badge-g ✅ APPROVED', PENDING:'badge-a ⏳ PENDING', REJECTED:'badge-r ❌ REJECTED', PAUSED:'badge-gr ⏸️ PAUSED', DISABLED:'badge-gr 🚫 DISABLED' };
+  const txt = map[s] || 'badge-gr ' + (s||'UNKNOWN');
+  const [cls,...rest] = txt.split(' ');
+  return `<span class="badge ${cls}">${rest.join(' ')}</span>`;
+}
+
+function qualityBadge(qs) {
+  if(!qs || !qs.score) return '<span style="color:var(--muted);font-size:12px">—</span>';
+  const score = qs.score;
+  const color = score === 'GREEN' ? '#2e7d32' : score === 'YELLOW' ? '#e65100' : '#c62828';
+  const icon = score === 'GREEN' ? '🟢' : score === 'YELLOW' ? '🟡' : '🔴';
+  return `<span style="font-size:12px;color:${color}">${icon} ${score}</span>`;
+}
+
+function viewMetaTemplate(name) {
+  const t = allMetaTemplates.find(t => t.name === name);
+  if(!t) return;
+  document.getElementById('meta-detail-title').textContent = t.name;
+  const header = t.components?.find(c => c.type === 'HEADER');
+  const body = t.components?.find(c => c.type === 'BODY');
+  const footer = t.components?.find(c => c.type === 'FOOTER');
+  const buttons = t.components?.find(c => c.type === 'BUTTONS');
+
+  document.getElementById('meta-detail-body').innerHTML = `
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+      ${metaStatusBadge(t.status)}
+      <span class="badge badge-b">${t.category}</span>
+      <span class="badge badge-gr">${t.language}</span>
+      ${t.quality_score?.score ? qualityBadge(t.quality_score) : ''}
+    </div>
+    ${t.status === 'REJECTED' && t.rejected_reason ? `<div class="alert alert-error">❌ Reject Reason: <strong>${t.rejected_reason}</strong></div>` : ''}
+    ${t.components ? `
+      <div style="background:#e5ddd5;border-radius:12px;padding:14px;max-width:320px;margin:0 auto 16px">
+        ${header ? `<div style="background:#fff;border-radius:8px;padding:10px 12px;margin-bottom:6px;font-weight:700;font-size:13px">${header.format === 'TEXT' ? header.text : '<span style="color:var(--muted)">['+header.format+']</span>'}</div>` : ''}
+        ${body ? `<div style="background:#dcf8c6;border-radius:8px;padding:10px 12px;font-size:13px;line-height:1.6;white-space:pre-wrap">${body.text}</div>` : ''}
+        ${footer ? `<div style="font-size:11px;color:var(--muted);padding:4px 4px 0;margin-top:2px">${footer.text}</div>` : ''}
+        ${buttons?.buttons?.length ? `<div style="margin-top:8px;display:flex;flex-direction:column;gap:4px">${buttons.buttons.map(b => `<div style="background:#fff;border-radius:8px;padding:9px 12px;font-size:13px;text-align:center;color:#128C7E;font-weight:500">${b.type === 'URL' ? '🔗' : b.type === 'PHONE_NUMBER' ? '📞' : '↩️'} ${b.text}</div>`).join('')}</div>` : ''}
+      </div>
+    ` : ''}
+    <div style="font-size:12px;color:var(--muted)">Template ID: ${t.id || '—'}</div>`;
+  document.getElementById('meta-detail-modal').classList.remove('hidden');
+}
+
+async function deleteMetaTemplate(name) {
+  if(!confirm(`"${name}" Meta to delete karna hai? Eh permanent hai!`)) return;
+  try {
+    await api('DELETE', '/meta-templates/' + encodeURIComponent(name));
+    toast('Template delete hoya!', 'success');
+    await loadMetaTemplates();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+// ── META SUBMIT MODAL ──────────────────────────────────────────────────────────
+function openMetaTplModal() {
+  document.getElementById('meta-tpl-modal').classList.remove('hidden');
+  document.getElementById('mt-name').value = '';
+  document.getElementById('mt-body').value = '';
+  document.getElementById('mt-footer').value = '';
+  document.getElementById('mt-header-type').value = '';
+  document.getElementById('mt-header-text').value = '';
+  document.getElementById('mt-header-text-row').classList.add('hidden');
+  document.getElementById('mt-buttons-list').innerHTML = '';
+  document.getElementById('mt-submit-result').classList.add('hidden');
+  metaBtnCount = 0;
+  updateMetaPreview();
+}
+function closeMetaTplModal() { document.getElementById('meta-tpl-modal').classList.add('hidden'); }
+
+function toggleMetaHeader(val) {
+  document.getElementById('mt-header-text-row').classList.toggle('hidden', val !== 'text');
+  updateMetaPreview();
+}
+
+function addMetaBtn() {
+  if(metaBtnCount >= 3) { toast('Maximum 3 buttons allowed', 'error'); return; }
+  const idx = metaBtnCount++;
+  const div = document.createElement('div');
+  div.id = 'mt-btn-' + idx;
+  div.style.cssText = 'display:flex;gap:8px;align-items:center;background:var(--bg);padding:10px;border-radius:8px';
+  div.innerHTML = `
+    <select id="mt-btn-type-${idx}" onchange="updateMetaPreview()" style="padding:7px 10px;border:1.5px solid var(--border);border-radius:6px;background:#fff;font-size:13px">
+      <option value="QUICK_REPLY">↩️ Quick Reply</option>
+      <option value="URL">🔗 URL</option>
+      <option value="PHONE_NUMBER">📞 Phone</option>
+    </select>
+    <input type="text" id="mt-btn-text-${idx}" placeholder="Button text" oninput="updateMetaPreview()" style="flex:1;padding:7px 10px;border:1.5px solid var(--border);border-radius:6px;font-size:13px" />
+    <input type="text" id="mt-btn-val-${idx}" placeholder="URL ya Phone (optional)" oninput="updateMetaPreview()" style="flex:1;padding:7px 10px;border:1.5px solid var(--border);border-radius:6px;font-size:13px" />
+    <button class="btn btn-red btn-sm" onclick="removeMetaBtn(${idx})">✕</button>`;
+  document.getElementById('mt-buttons-list').appendChild(div);
+}
+
+function removeMetaBtn(idx) {
+  document.getElementById('mt-btn-'+idx)?.remove();
+  metaBtnCount = Math.max(0, metaBtnCount - 1);
+  updateMetaPreview();
+}
+
+function updateMetaPreview() {
+  const headerType = document.getElementById('mt-header-type').value;
+  const headerText = document.getElementById('mt-header-text').value;
+  const body = document.getElementById('mt-body').value;
+  const footer = document.getElementById('mt-footer').value;
+
+  const hEl = document.getElementById('mt-preview-header');
+  const bEl = document.getElementById('mt-preview-body');
+  const fEl = document.getElementById('mt-preview-footer');
+  const btnsEl = document.getElementById('mt-preview-btns');
+
+  if(headerType === 'text' && headerText) { hEl.textContent = headerText; hEl.style.display = 'block'; }
+  else if(headerType) { hEl.innerHTML = `<span style="color:var(--muted);font-style:italic">[${headerType} Header]</span>`; hEl.style.display = 'block'; }
+  else { hEl.style.display = 'none'; }
+
+  bEl.textContent = body || 'Body text yahan aayega...';
+
+  if(footer) { fEl.textContent = footer; fEl.style.display = 'block'; }
+  else { fEl.style.display = 'none'; }
+
+  // Collect buttons
+  let btnsHtml = '';
+  for(let i = 0; i < metaBtnCount; i++) {
+    const btnEl = document.getElementById('mt-btn-'+i);
+    if(!btnEl) continue;
+    const t = document.getElementById('mt-btn-text-'+i)?.value || '';
+    const type = document.getElementById('mt-btn-type-'+i)?.value || 'QUICK_REPLY';
+    const icon = type === 'URL' ? '🔗' : type === 'PHONE_NUMBER' ? '📞' : '↩️';
+    if(t) btnsHtml += `<div style="background:#fff;border-radius:8px;padding:9px 12px;font-size:13px;text-align:center;color:#128C7E;font-weight:500">${icon} ${t}</div>`;
+  }
+  btnsEl.innerHTML = btnsHtml;
+}
+
+async function submitMetaTemplate() {
+  const name = document.getElementById('mt-name').value.trim();
+  const category = document.getElementById('mt-category').value;
+  const language = document.getElementById('mt-language').value;
+  const bodyText = document.getElementById('mt-body').value.trim();
+  const footer = document.getElementById('mt-footer').value.trim();
+  const headerType = document.getElementById('mt-header-type').value;
+  const headerText = document.getElementById('mt-header-text').value.trim();
+
+  if(!name) { toast('Template naam zaroori hai', 'error'); return; }
+  if(!bodyText) { toast('Body text zaroori hai', 'error'); return; }
+
+  // Build header
+  let header = null;
+  if(headerType === 'text' && headerText) header = { type: 'text', text: headerText };
+  else if(headerType) header = { type: headerType };
+
+  // Build buttons
+  const buttons = [];
+  for(let i = 0; i < metaBtnCount; i++) {
+    const btnEl = document.getElementById('mt-btn-'+i);
+    if(!btnEl) continue;
+    const text = document.getElementById('mt-btn-text-'+i)?.value?.trim();
+    const type = document.getElementById('mt-btn-type-'+i)?.value;
+    const val = document.getElementById('mt-btn-val-'+i)?.value?.trim();
+    if(!text) continue;
+    const btn = { type, text };
+    if(type === 'URL' && val) btn.url = val;
+    if(type === 'PHONE_NUMBER' && val) btn.phone_number = val;
+    buttons.push(btn);
+  }
+
+  const btn = document.getElementById('mt-submit-btn');
+  const resultEl = document.getElementById('mt-submit-result');
+  btn.innerHTML = '<div class="spinner"></div> Meta nu submit ho raha hai...'; btn.disabled = true;
+
+  try {
+    const d = await api('POST', '/meta-templates', { name, category, language, header, body: bodyText, footer: footer || undefined, buttons: buttons.length ? buttons : undefined });
+    resultEl.innerHTML = `<div class="alert alert-success">
+      🎉 Template "<strong>${name}</strong>" Meta nu submit ho gaya!<br>
+      Status: <strong>${d.status || 'PENDING'}</strong><br>
+      <small>Meta 24-48 ghante mein review karega. "WA Approval" page te status check karte raho.</small>
+    </div>`;
+    resultEl.classList.remove('hidden');
+    toast('Template submitted!', 'success');
+    // Reload meta templates
+    setTimeout(() => loadMetaTemplates(), 1000);
+  } catch(e) {
+    resultEl.innerHTML = `<div class="alert alert-error">❌ ${e.message}<br><small>Template name unique hona chahida, lowercase_underscore format mein.</small></div>`;
+    resultEl.classList.remove('hidden');
+  }
+  btn.innerHTML = '📤 Meta nu Submit Karo'; btn.disabled = false;
+}
+
+// ═══════════════════════════════════════════════════════
+// CHAT
+// ═══════════════════════════════════════════════════════
+async function loadChatThreads() {
+  try {
+    allThreads = await api('GET', '/chats');
+    renderThreads(allThreads);
+    if(activeChatPhone) refreshActiveChat();
+  } catch {}
+}
+
+function renderThreads(threads) {
+  const el = document.getElementById('chat-threads');
+  if(!threads.length) { el.innerHTML = '<div class="empty" style="padding:30px 20px"><div class="empty-icon">💬</div><p>Abhi koi chat nahi</p></div>'; return; }
+  el.innerHTML = threads.map(t => {
+    const initials = (t.name||t.phone||'?').slice(0,2).toUpperCase();
+    const isActive = t.phone === activeChatPhone;
+    return `<div class="thread-item ${isActive?'active':''}" onclick="openChat('${t.phone}','${(t.name||'').replace(/'/g,'&apos;')}')">
+      <div class="thread-avatar" style="background:${phoneColor(t.phone)}">${initials}</div>
+      <div class="thread-info">
+        <div class="thread-name">${t.name || t.phone}</div>
+        <div class="thread-preview ${t.direction==='out'?'thread-out':'thread-in'}">${t.direction==='out'?'↗ ':''}${t.lastMessage||'...'}</div>
+      </div>
+      <div class="thread-meta">
+        <div class="thread-time">${formatTime(t.lastAt)}</div>
+        ${t.unread ? `<div class="thread-unread">${t.unread}</div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function filterThreads(q) {
+  if(!q) { renderThreads(allThreads); return; }
+  renderThreads(allThreads.filter(t => t.phone.includes(q) || (t.name||'').toLowerCase().includes(q.toLowerCase())));
+}
+
+async function openChat(phone, name) {
+  activeChatPhone = phone; activeChatName = name || phone;
+  document.getElementById('chat-empty-state').classList.add('hidden');
+  document.getElementById('chat-active').classList.remove('hidden');
+  document.getElementById('chat-active').style.display = 'flex';
+  document.getElementById('chat-contact-name').textContent = activeChatName || phone;
+  document.getElementById('chat-contact-phone').textContent = phone;
+  document.getElementById('chat-avatar').textContent = (activeChatName||phone).slice(0,2).toUpperCase();
+  renderThreads(allThreads);
+  await refreshActiveChat();
+  document.getElementById('chat-input').focus();
+}
+
+async function refreshActiveChat() {
+  if(!activeChatPhone) return;
+  const el = document.getElementById('chat-messages');
+  try {
+    const msgs = await api('GET', '/chats/' + encodeURIComponent(activeChatPhone));
+    if(!msgs.length) { el.innerHTML = '<div class="empty" style="padding:30px"><div class="empty-icon">💬</div><p>Koi message nahi. Pehla message bhejo!</p></div>'; return; }
+    let html = '', lastDate = '';
+    msgs.forEach(m => {
+      const dateStr = new Date(m.createdAt).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+      if(dateStr !== lastDate) { html += `<div class="msg-date-divider"><span>${dateStr}</span></div>`; lastDate = dateStr; }
+      const isOut = m.direction === 'out';
+      const statusIcon = m.status === 'sent' ? '✓✓' : m.status === 'failed' ? '✗' : m.status === 'sending' ? '⏳' : '✓';
+      html += `<div class="msg-bubble ${isOut?'msg-out':'msg-in'}">
+        ${m.text || '<em style="color:var(--muted)">['+m.messageType+']</em>'}
+        <div class="msg-time">${formatTime(m.createdAt)} ${isOut?`<span class="msg-status ${m.status}">${statusIcon}</span>`:''}</div>
+      </div>`;
+    });
+    el.innerHTML = html; el.scrollTop = el.scrollHeight;
+  } catch {}
+}
+
+async function sendChatMessage() {
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if(!text || !activeChatPhone) return;
+  const btn = document.getElementById('chat-send-btn');
+  btn.disabled = true; input.value = ''; autoResize(input);
+  try {
+    await api('POST', '/chats/' + encodeURIComponent(activeChatPhone) + '/send', { text, messageType: 'text' });
+    await refreshActiveChat(); await loadChatThreads();
+  } catch(e) { toast(e.message, 'error'); input.value = text; }
+  btn.disabled = false; input.focus();
+}
+
+function chatInputKeydown(e) { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChatMessage(); } }
+function autoResize(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 120) + 'px'; }
+function openChatWith(phone, name) { showPage('chat', document.querySelector('[data-page=chat]')); setTimeout(() => openChat(phone, name), 200); }
+
+function openNewChatModal() { document.getElementById('new-chat-modal').classList.remove('hidden'); document.getElementById('new-chat-phone').focus(); }
+function closeNewChatModal() { document.getElementById('new-chat-modal').classList.add('hidden'); document.getElementById('new-chat-phone').value = ''; document.getElementById('new-chat-message').value = ''; }
+
+async function startNewChat() {
+  const phone = document.getElementById('new-chat-phone').value.trim();
+  const text = document.getElementById('new-chat-message').value.trim();
+  if(!phone || !text) { toast('Phone te message dono bharo', 'error'); return; }
+  try {
+    await api('POST', '/chats/' + encodeURIComponent(phone) + '/send', { text, messageType: 'text' });
+    closeNewChatModal(); await loadChatThreads(); openChat(phone, '');
+    toast('Message bhej ditta!', 'success');
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+function openChatSendModal() {
+  const sel = document.getElementById('chat-tpl-select');
+  sel.innerHTML = '<option value="">— Template select karo —</option>';
+  allTemplates.filter(t => t.messageType === 'text').forEach(t => { const o = document.createElement('option'); o.value = t.id; o.textContent = t.name; sel.appendChild(o); });
+  document.getElementById('chat-tpl-preview').classList.add('hidden');
+  document.getElementById('chat-tpl-modal').classList.remove('hidden');
+}
+function closeChatTplModal() { document.getElementById('chat-tpl-modal').classList.add('hidden'); }
+function previewChatTpl(id) {
+  const preview = document.getElementById('chat-tpl-preview');
+  if(!id) { preview.classList.add('hidden'); return; }
+  const t = allTemplates.find(t => t.id === id);
+  if(t) { preview.textContent = t.messageText || ''; preview.classList.remove('hidden'); }
+}
+async function sendChatTemplate() {
+  const id = document.getElementById('chat-tpl-select').value;
+  if(!id) { toast('Template select karo', 'error'); return; }
+  const t = allTemplates.find(t => t.id === id); if(!t) return;
+  try {
+    await api('POST', '/chats/' + encodeURIComponent(activeChatPhone) + '/send', { text: t.messageText, messageType: 'text' });
+    closeChatTplModal(); await refreshActiveChat(); await loadChatThreads();
+    toast('Template bhej ditta!', 'success');
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+// ══════════════════════════════════════════════════════════
+// FLOW BUILDER
+// ══════════════════════════════════════════════════════════
+let allFlows = [];
+let currentFlow = null;  // flow being edited
+
+// ── LIST VIEW ─────────────────────────────────────────────
+async function loadFlows() {
+  try {
+    allFlows = await api('GET', '/flows');
+    renderFlowList();
+    loadFlowSessions();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+function renderFlowList() {
+  const el = document.getElementById('flow-list-grid');
+  if (!allFlows.length) {
+    el.innerHTML = '<div class="empty" style="grid-column:1/-1"><div class="empty-icon">🔀</div><p>Abhi koi flow nahi. Pehla flow banao!</p></div>';
+    return;
+  }
+  el.innerHTML = allFlows.map(f => `
+    <div class="flow-card ${f.active?'':'inactive'}" onclick="openFlowEditor('${f.id}')">
+      <div class="flow-card-header">
+        <div class="flow-card-title">🔀 ${escHtml(f.name)}</div>
+        <span class="flow-card-kw">${escHtml(f.triggerKeyword)}</span>
+      </div>
+      ${f.description ? `<div class="flow-card-desc">${escHtml(f.description)}</div>` : ''}
+      <div class="flow-card-meta">
+        <span>📦 ${f.nodes.length} nodes</span>
+        <span>•</span>
+        <span>${f.active ? '🟢 Active' : '🔴 Paused'}</span>
+        <span>•</span>
+        <span>${formatDateShort(f.createdAt)}</span>
+      </div>
+      <div class="flow-card-actions" onclick="event.stopPropagation()">
+        <button class="btn btn-sm btn-outline" onclick="openFlowEditor('${f.id}')">✏️ Edit</button>
+        <button class="btn btn-sm ${f.active?'btn-outline':'btn-green'}" onclick="toggleFlow('${f.id}',${!f.active})">${f.active?'⏸ Pause':'▶ Activate'}</button>
+        <button class="btn btn-sm btn-red" onclick="deleteFlow('${f.id}')">🗑️</button>
+      </div>
+    </div>`).join('');
+}
+
+async function loadFlowSessions() {
+  try {
+    const sessions = await api('GET', '/flows/sessions/all');
+    const phones = Object.keys(sessions);
+    document.getElementById('sessions-count').textContent = phones.length;
+    if (!phones.length) { document.getElementById('sessions-list').innerHTML = '<span style="color:var(--muted)">Koi active session nahi</span>'; return; }
+    const rows = phones.map(phone => {
+      const s = sessions[phone];
+      const flow = allFlows.find(f => f.id === s.flowId);
+      const node = flow?.nodes.find(n => n.id === s.nodeId);
+      return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
+        <span style="font-weight:600">${escHtml(phone)}</span>
+        <span style="color:var(--muted)">→</span>
+        <span style="color:var(--gdd)">${escHtml(flow?.name||'Unknown')}</span>
+        <span style="color:var(--muted);font-size:11px">[${node?.type||'?'} node]</span>
+        <span style="margin-left:auto;font-size:11px;color:var(--muted)">${formatTime(s.lastAt)}</span>
+        <button class="btn btn-sm btn-red" onclick="clearSession('${escHtml(phone)}')">✕ Clear</button>
+      </div>`;
+    }).join('');
+    document.getElementById('sessions-list').innerHTML = rows;
+  } catch {}
+}
+
+async function clearSession(phone) {
+  try {
+    await api('DELETE', '/flows/sessions/' + encodeURIComponent(phone));
+    toast('Session clear ho gaya', 'success');
+    loadFlowSessions();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+// ── CREATE / EDIT FLOW META ───────────────────────────────
+function openCreateFlowModal(id) {
+  document.getElementById('edit-flow-id').value = id || '';
+  document.getElementById('create-flow-modal-title').textContent = id ? 'Flow Edit Karo' : 'New Flow Banao';
+  if (id) {
+    const f = allFlows.find(f => f.id === id);
+    if (f) { document.getElementById('flow-name-input').value = f.name; document.getElementById('flow-trigger-input').value = f.triggerKeyword; document.getElementById('flow-desc-input').value = f.description || ''; }
+  } else {
+    document.getElementById('flow-name-input').value = '';
+    document.getElementById('flow-trigger-input').value = '';
+    document.getElementById('flow-desc-input').value = '';
+  }
+  document.getElementById('create-flow-modal').classList.remove('hidden');
+  setTimeout(() => document.getElementById('flow-name-input').focus(), 100);
+}
+
+function closeCreateFlowModal() { document.getElementById('create-flow-modal').classList.add('hidden'); }
+
+async function saveFlowMeta() {
+  const id = document.getElementById('edit-flow-id').value;
+  const name = document.getElementById('flow-name-input').value.trim();
+  const triggerKeyword = document.getElementById('flow-trigger-input').value.trim();
+  const description = document.getElementById('flow-desc-input').value.trim();
+  if (!name || !triggerKeyword) { toast('Name te trigger zaroori hain', 'error'); return; }
+  try {
+    if (id) {
+      const updated = await api('PUT', '/flows/' + id, { name, triggerKeyword, description });
+      const idx = allFlows.findIndex(f => f.id === id);
+      if (idx !== -1) allFlows[idx] = updated;
+      if (currentFlow?.id === id) {
+        currentFlow = updated;
+        document.getElementById('flow-editor-title').textContent = updated.name;
+        document.getElementById('flow-editor-kw-badge').textContent = updated.triggerKeyword;
+      }
+      toast('Flow update ho gaya!', 'success');
+    } else {
+      const newFlow = await api('POST', '/flows', { name, triggerKeyword, description });
+      allFlows.push(newFlow);
+      toast('Flow ban gaya! Hune nodes add karo.', 'success');
+      closeCreateFlowModal();
+      renderFlowList();
+      openFlowEditor(newFlow.id);
+      return;
+    }
+    closeCreateFlowModal();
+    renderFlowList();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function toggleFlow(id, active) {
+  try {
+    const updated = await api('PUT', '/flows/' + id, { active });
+    const idx = allFlows.findIndex(f => f.id === id);
+    if (idx !== -1) allFlows[idx] = updated;
+    if (currentFlow?.id === id) {
+      currentFlow = updated;
+      document.getElementById('flow-active-btn').innerHTML = active ? '⏸ Pause' : '▶ Activate';
+    }
+    renderFlowList();
+    toast(active ? 'Flow active ho gaya!' : 'Flow pause ho gaya!', 'success');
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function deleteFlow(id) {
+  if (!confirm('Eh flow te iske saare nodes delete ho jaange?')) return;
+  try {
+    await api('DELETE', '/flows/' + id);
+    allFlows = allFlows.filter(f => f.id !== id);
+    renderFlowList();
+    toast('Flow delete ho gaya!', 'success');
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+// ── FLOW EDITOR ───────────────────────────────────────────
+async function openFlowEditor(id) {
+  try {
+    currentFlow = await api('GET', '/flows/' + id);
+    document.getElementById('flow-list-view').classList.add('hidden');
+    document.getElementById('flow-editor-view').classList.remove('hidden');
+    document.getElementById('flow-editor-title').textContent = currentFlow.name;
+    document.getElementById('flow-editor-kw-badge').textContent = '🔑 ' + currentFlow.triggerKeyword;
+    document.getElementById('flow-active-btn').innerHTML = currentFlow.active ? '⏸ Pause' : '▶ Activate';
+    document.getElementById('flow-active-btn').className = 'btn btn-sm ' + (currentFlow.active ? 'btn-outline' : 'btn-green');
+    renderFlowCanvas();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+function backToFlowList() {
+  currentFlow = null;
+  document.getElementById('flow-editor-view').classList.add('hidden');
+  document.getElementById('flow-list-view').classList.remove('hidden');
+  loadFlows();
+}
+
+function openEditFlowMeta() { openCreateFlowModal(currentFlow?.id); }
+
+async function toggleFlowActive() {
+  if (!currentFlow) return;
+  await toggleFlow(currentFlow.id, !currentFlow.active);
+}
+
+function renderFlowCanvas() {
+  const canvas = document.getElementById('flow-canvas');
+  if (!currentFlow || !currentFlow.nodes.length) {
+    canvas.innerHTML = `<div class="empty" style="padding:40px 0;text-align:center;color:var(--muted)"><div style="font-size:40px;margin-bottom:8px">🔀</div><p>Abhi koi node nahi.<br>Pehla node add karo!</p></div>`;
+    return;
+  }
+
+  const nodeMap = {};
+  currentFlow.nodes.forEach(n => nodeMap[n.id] = n);
+  const typeIcons = { message: '💬', condition: '🔀', end: '🛑' };
+  const typeLabels = { message: 'Message', condition: 'Condition', end: 'End' };
+
+  let html = '';
+  currentFlow.nodes.forEach((node, i) => {
+    const nextNode = nodeMap[node.nextNodeId];
+    const fallbackNode = nodeMap[node.fallbackNodeId];
+    const nodeHtml = `
+      <div class="flow-node type-${node.type}" id="fn-${node.id}">
+        <div class="flow-node-header">
+          <div class="flow-node-num">${i+1}</div>
+          <span class="flow-node-type-badge">${typeIcons[node.type]} ${typeLabels[node.type]}</span>
+          <div class="flow-node-label" style="font-weight:400;font-size:12px;color:var(--muted);margin-left:4px">
+            ${node.type==='message'&&node.delaySeconds>0?`⏱️ ${node.delaySeconds}s delay`:''}
+          </div>
+          <div class="flow-node-actions">
+            <button class="btn btn-sm btn-outline" onclick="openEditNodeModal('${node.id}')" title="Edit">✏️</button>
+            <button class="btn btn-sm btn-red" onclick="deleteNode('${node.id}')" title="Delete">🗑️</button>
+          </div>
+        </div>
+        ${node.type==='message'||node.type==='end' ? `<div class="flow-node-body">${escHtml(node.text||'(no text)')}</div>` : ''}
+        ${node.type==='condition' ? `
+          <div class="flow-node-conditions">
+            ${(node.conditions||[]).map(c=>`
+              <div class="condition-row">
+                <span>User likhega:</span>
+                <span class="condition-kw">${escHtml(c.match)}</span>
+                <span class="condition-arrow">→</span>
+                <span class="condition-target">${nodeMap[c.nextNodeId]?`Node ${currentFlow.nodes.findIndex(n=>n.id===c.nextNodeId)+1}`:'End'}</span>
+              </div>`).join('')}
+            ${fallbackNode?`<div class="condition-row" style="background:#fff3e0"><span>Fallback (koi match nahi):</span><span class="condition-arrow">→</span><span class="condition-target">Node ${currentFlow.nodes.findIndex(n=>n.id===node.fallbackNodeId)+1}</span></div>`
+              :'<div class="condition-row" style="background:#fce4ec;color:var(--muted)"><span>Fallback: Flow End</span></div>'}
+          </div>` : ''}
+        ${node.type==='message'&&nextNode?`<div style="padding:6px 16px 10px;font-size:11px;color:var(--muted)">Next → Node ${currentFlow.nodes.findIndex(n=>n.id===node.nextNodeId)+1} (${typeLabels[nextNode.type]})</div>`:''}
+      </div>`;
+
+    html += nodeHtml;
+    if (i < currentFlow.nodes.length - 1) {
+      html += `<div class="flow-arrow"><div class="flow-arrow-line"></div><div class="flow-arrow-head"></div></div>`;
+    }
+  });
+  canvas.innerHTML = html;
+}
+
+// ── NODE MODAL ────────────────────────────────────────────
+function openAddNodeModal() {
+  document.getElementById('edit-node-id').value = '';
+  document.getElementById('node-modal-title').textContent = 'Node Add Karo';
+  document.getElementById('node-type-select').value = 'message';
+  document.getElementById('node-text').value = '';
+  document.getElementById('node-delay').value = '0';
+  document.getElementById('node-end-text').value = '';
+  document.getElementById('conditions-editor').innerHTML = '';
+  onNodeTypeChange();
+  populateNodeSelects('');
+  document.getElementById('node-modal').classList.remove('hidden');
+}
+
+function openEditNodeModal(nodeId) {
+  const node = currentFlow.nodes.find(n => n.id === nodeId);
+  if (!node) return;
+  document.getElementById('edit-node-id').value = nodeId;
+  document.getElementById('node-modal-title').textContent = 'Node Edit Karo';
+  document.getElementById('node-type-select').value = node.type;
+  document.getElementById('node-text').value = node.text || '';
+  document.getElementById('node-delay').value = node.delaySeconds || 0;
+  document.getElementById('node-end-text').value = node.type === 'end' ? (node.text||'') : '';
+  document.getElementById('conditions-editor').innerHTML = '';
+  if (node.type === 'condition') {
+    (node.conditions||[]).forEach(c => addConditionRow(c.match, c.nextNodeId));
+  }
+  onNodeTypeChange();
+  populateNodeSelects(nodeId, node.nextNodeId, node.fallbackNodeId);
+  document.getElementById('node-modal').classList.remove('hidden');
+}
+
+function closeNodeModal() { document.getElementById('node-modal').classList.add('hidden'); }
+
+function onNodeTypeChange() {
+  const type = document.getElementById('node-type-select').value;
+  document.getElementById('node-message-fields').classList.toggle('hidden', type !== 'message');
+  document.getElementById('node-condition-fields').classList.toggle('hidden', type !== 'condition');
+  document.getElementById('node-end-fields').classList.toggle('hidden', type !== 'end');
+  document.getElementById('node-next-field').classList.toggle('hidden', type !== 'message');
+}
+
+function populateNodeSelects(excludeId, selectedNext, selectedFallback) {
+  const nodes = (currentFlow?.nodes||[]).filter(n => n.id !== excludeId);
+  const opts = '<option value="">— End (flow khatam) —</option>' + nodes.map((n,i)=>`<option value="${n.id}">${i+1}. ${n.type}: ${(n.text||n.type).slice(0,30)}</option>`).join('');
+  document.getElementById('node-next-select').innerHTML = opts;
+  document.getElementById('node-fallback-select').innerHTML = opts;
+  if (selectedNext) document.getElementById('node-next-select').value = selectedNext;
+  if (selectedFallback) document.getElementById('node-fallback-select').value = selectedFallback;
+  // Also update condition selects
+  document.querySelectorAll('.cond-next-select').forEach(sel => {
+    const cur = sel.value;
+    sel.innerHTML = opts;
+    if (cur) sel.value = cur;
+  });
+}
+
+let condRowCounter = 0;
+function addConditionRow(match, nextNodeId) {
+  const id = 'cond-' + (condRowCounter++);
+  const nodes = (currentFlow?.nodes||[]);
+  const opts = '<option value="">— End —</option>' + nodes.map((n,i)=>`<option value="${n.id}" ${n.id===nextNodeId?'selected':''}>${i+1}. ${n.type}: ${(n.text||n.type).slice(0,25)}</option>`).join('');
+  const row = document.createElement('div');
+  row.id = id;
+  row.style.cssText = 'display:flex;gap:8px;align-items:center;background:var(--bg);padding:8px;border-radius:8px';
+  row.innerHTML = `
+    <input type="text" placeholder="User reply (e.g. 1, price, yes)" value="${escHtml(match||'')}" style="flex:1;padding:8px;border:1.5px solid var(--border);border-radius:6px;font-size:13px" class="cond-match-input">
+    <span style="color:var(--muted);font-size:12px">→</span>
+    <select class="cond-next-select" style="flex:1;padding:8px;border:1.5px solid var(--border);border-radius:6px;font-size:12px">${opts}</select>
+    <button onclick="document.getElementById('${id}').remove()" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:16px;padding:0 4px">✕</button>`;
+  document.getElementById('conditions-editor').appendChild(row);
+}
+
+async function saveNode() {
+  const type = document.getElementById('node-type-select').value;
+  const editId = document.getElementById('edit-node-id').value;
+  let nodeData = { type };
+
+  if (type === 'message') {
+    nodeData.text = document.getElementById('node-text').value.trim();
+    nodeData.delaySeconds = parseInt(document.getElementById('node-delay').value)||0;
+    nodeData.nextNodeId = document.getElementById('node-next-select').value || null;
+    if (!nodeData.text) { toast('Message text zaroori hai', 'error'); return; }
+  } else if (type === 'condition') {
+    const rows = document.querySelectorAll('#conditions-editor > div');
+    const conditions = [];
+    rows.forEach(row => {
+      const match = row.querySelector('.cond-match-input').value.trim();
+      const nextNodeId = row.querySelector('.cond-next-select').value || null;
+      if (match) conditions.push({ match, nextNodeId });
+    });
+    if (!conditions.length) { toast('Kam az kam ek condition zaroori hai', 'error'); return; }
+    nodeData.conditions = conditions;
+    nodeData.fallbackNodeId = document.getElementById('node-fallback-select').value || null;
+  } else if (type === 'end') {
+    nodeData.text = document.getElementById('node-end-text').value.trim();
+  }
+
+  try {
+    if (editId) {
+      currentFlow = await api('PUT', '/flows/' + currentFlow.id + '/nodes/' + editId, nodeData);
+      toast('Node update ho gaya!', 'success');
+    } else {
+      const result = await api('POST', '/flows/' + currentFlow.id + '/nodes', nodeData);
+      currentFlow = result.flow;
+      toast('Node add ho gaya!', 'success');
+    }
+    closeNodeModal();
+    renderFlowCanvas();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function deleteNode(nodeId) {
+  if (!confirm('Eh node delete karna hai?')) return;
+  try {
+    currentFlow = await api('DELETE', '/flows/' + currentFlow.id + '/nodes/' + nodeId);
+    renderFlowCanvas();
+    toast('Node delete ho gaya!', 'success');
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+// ══════════════════════════════════════════════════════════
+// CHATBOT
+// ══════════════════════════════════════════════════════════
+let botData = null;
+
+async function loadChatbot() {
+  try {
+    botData = await api('GET', '/chatbot');
+    document.getElementById('bot-enabled-toggle').checked = botData.enabled;
+    document.getElementById('bot-status-label').textContent = botData.enabled ? 'Bot: ON ✅' : 'Bot: OFF';
+    document.getElementById('bot-welcome').value = botData.welcomeMsg || '';
+    document.getElementById('bot-fallback').value = botData.fallbackMsg || '';
+    renderRules(botData.rules || []);
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function toggleBot(enabled) {
+  try {
+    const d = await api('PUT', '/chatbot/settings', { enabled });
+    botData = d.chatbot;
+    document.getElementById('bot-status-label').textContent = enabled ? 'Bot: ON ✅' : 'Bot: OFF';
+    toast(enabled ? 'Chatbot ON ho gaya!' : 'Chatbot OFF ho gaya!', 'success');
+  } catch(e) {
+    document.getElementById('bot-enabled-toggle').checked = !enabled;
+    toast(e.message, 'error');
+  }
+}
+
+async function saveBotSettings() {
+  const welcomeMsg = document.getElementById('bot-welcome').value.trim();
+  const fallbackMsg = document.getElementById('bot-fallback').value.trim();
+  try {
+    const d = await api('PUT', '/chatbot/settings', { welcomeMsg, fallbackMsg });
+    botData = d.chatbot;
+    toast('Settings save ho gayi!', 'success');
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+function renderRules(rules) {
+  const el = document.getElementById('bot-rules-list');
+  if (!rules.length) {
+    el.innerHTML = '<div class="empty"><div class="empty-icon">🤖</div><p>Abhi koi rule nahi. Pehla rule add karo!</p></div>';
+    return;
+  }
+  const matchLabel = { contains: 'Contains', exact: 'Exact Match', startsWith: 'Starts With' };
+  el.innerHTML = rules.map((r, i) => `
+    <div class="rule-card ${r.active ? '' : 'inactive'}" id="rule-card-${r.id}">
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span style="font-size:12px;color:var(--muted);font-weight:500">#${i+1}</span>
+          <span class="rule-kw">${escHtml(r.keyword)}</span>
+          <span class="rule-match">${matchLabel[r.matchType] || r.matchType}</span>
+          ${!r.active ? '<span class="rule-match" style="background:#fef2f2;color:var(--red)">Inactive</span>' : ''}
+        </div>
+        <div class="rule-reply">↩ ${escHtml(r.reply)}</div>
+      </div>
+      <div class="rule-actions">
+        <button class="btn btn-sm ${r.active ? 'btn-outline' : 'btn-green'}" onclick="toggleRule('${r.id}',${!r.active})" title="${r.active ? 'Disable' : 'Enable'}">${r.active ? '⏸' : '▶'}</button>
+        <button class="btn btn-sm btn-outline" onclick="openRuleModal('${r.id}')" title="Edit">✏️</button>
+        <button class="btn btn-sm btn-red" onclick="deleteRule('${r.id}')" title="Delete">🗑️</button>
+      </div>
+    </div>`).join('');
+}
+
+function openRuleModal(id) {
+  document.getElementById('rule-edit-id').value = id || '';
+  document.getElementById('rule-modal-title').textContent = id ? 'Rule Edit Karo' : 'Rule Add Karo';
+  if (id && botData) {
+    const r = botData.rules.find(r => r.id === id);
+    if (r) {
+      document.getElementById('rule-keyword').value = r.keyword || '';
+      document.getElementById('rule-match-type').value = r.matchType || 'contains';
+      document.getElementById('rule-reply').value = r.reply || '';
+    }
+  } else {
+    document.getElementById('rule-keyword').value = '';
+    document.getElementById('rule-match-type').value = 'contains';
+    document.getElementById('rule-reply').value = '';
+  }
+  document.getElementById('rule-modal').classList.remove('hidden');
+  setTimeout(() => document.getElementById('rule-keyword').focus(), 100);
+}
+
+function closeRuleModal() {
+  document.getElementById('rule-modal').classList.add('hidden');
+}
+
+async function saveRule() {
+  const id = document.getElementById('rule-edit-id').value;
+  const keyword = document.getElementById('rule-keyword').value.trim();
+  const matchType = document.getElementById('rule-match-type').value;
+  const reply = document.getElementById('rule-reply').value.trim();
+  if (!keyword) { toast('Keyword zaroori hai', 'error'); return; }
+  if (!reply) { toast('Reply zaroori hai', 'error'); return; }
+  try {
+    if (id) {
+      const updated = await api('PUT', '/chatbot/rules/' + id, { keyword, matchType, reply });
+      const idx = botData.rules.findIndex(r => r.id === id);
+      if (idx !== -1) botData.rules[idx] = updated;
+    } else {
+      const newRule = await api('POST', '/chatbot/rules', { keyword, matchType, reply });
+      botData.rules.push(newRule);
+    }
+    renderRules(botData.rules);
+    closeRuleModal();
+    toast(id ? 'Rule update ho gaya!' : 'Rule add ho gaya!', 'success');
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function toggleRule(id, active) {
+  try {
+    const updated = await api('PUT', '/chatbot/rules/' + id, { active });
+    const idx = botData.rules.findIndex(r => r.id === id);
+    if (idx !== -1) botData.rules[idx] = updated;
+    renderRules(botData.rules);
+    toast(active ? 'Rule active ho gaya!' : 'Rule pause ho gaya!', 'success');
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function deleteRule(id) {
+  if (!confirm('Eh rule delete karna hai?')) return;
+  try {
+    await api('DELETE', '/chatbot/rules/' + id);
+    botData.rules = botData.rules.filter(r => r.id !== id);
+    renderRules(botData.rules);
+    toast('Rule delete ho gaya!', 'success');
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+function escHtml(s) {
+  return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── HELPERS ────────────────────────────────────────────────────────────────────
+function statusBadge(s) {
+  const m = {sent:'badge-g ✅',failed:'badge-r ❌',pending:'badge-a ⏳',opted_out:'badge-b 🚫'};
+  const [cls,icon] = (m[s]||'badge-gr ❓').split(' ');
+  return `<span class="badge ${cls}">${icon} ${s}</span>`;
+}
+function campStatusBadge(s) {
+  const m = {completed:'badge-g ✅ Completed',running:'badge-a 🔥 Running',paused:'badge-b ⏸️ Paused',cancelled:'badge-r 🛑 Cancelled',scheduled:'badge-gr ⏰ Scheduled'};
+  const txt = m[s]||'badge-gr '+s;
+  const [cls,...rest] = txt.split(' ');
+  return `<span class="badge ${cls}">${rest.join(' ')}</span>`;
+}
+function msgTypeLabel(t) { return {text:'📝 Text',image:'🖼️ Image',template:'📋 Template'}[t]||t; }
+function formatDate(iso) { if(!iso) return '—'; return new Date(iso).toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}); }
+function formatDateShort(iso) { if(!iso) return '—'; return new Date(iso).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}); }
+function formatTime(iso) {
+  if(!iso) return '';
+  const d = new Date(iso), now = new Date();
+  const diffDays = Math.floor((now - d) / 86400000);
+  if(diffDays === 0) return d.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+  if(diffDays === 1) return 'Yesterday';
+  if(diffDays < 7) return d.toLocaleDateString('en-IN',{weekday:'short'});
+  return d.toLocaleDateString('en-IN',{day:'2-digit',month:'short'});
+}
+function phoneColor(phone) {
+  const colors = ['#128C7E','#075e54','#1565c0','#6a1b9a','#b71c1c','#e65100','#1b5e20','#0d47a1'];
+  let hash = 0;
+  for(let c of (phone||'')) hash = c.charCodeAt(0) + ((hash << 5) - hash);
+  return colors[Math.abs(hash) % colors.length];
+}
+
+// ── INIT ───────────────────────────────────────────────────────────────────────
+if(TOKEN) {
+  document.getElementById('login-page').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+  initApp();
+}
+document.addEventListener('keydown', e => { if(e.key==='Enter' && !document.getElementById('login-page').classList.contains('hidden')) doLogin(); });
+
+// Live preview listeners
+['mt-body','mt-footer','mt-header-text'].forEach(id => {
+  const el = document.getElementById(id);
+  if(el) el.addEventListener('input', updateMetaPreview);
+});
+</script>
+</body>
+</html>

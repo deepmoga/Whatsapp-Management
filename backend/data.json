@@ -1,0 +1,92 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "name": "Admin",
+      "email": "admin@example.com",
+      "password": "$2b$10$dQBxLD2905nZlSx5nDBO6eu/zKHVg0h8ZOdowmXvqKp7nD9Ek6TX6",
+      "role": "admin"
+    }
+  ],
+  "contacts": [],
+  "campaigns": [],
+  "messages": [],
+  "chats": [
+    {
+      "id": "8ef3e89c-3ab3-45c6-a585-310109c7ba16",
+      "phone": "9780551900",
+      "name": "",
+      "direction": "out",
+      "messageType": "text",
+      "text": "hello",
+      "status": "sent",
+      "createdAt": "2026-05-30T05:49:59.929Z",
+      "read": true
+    },
+    {
+      "id": "e1cc6763-0493-4141-9261-e8857c7de3fc",
+      "phone": "9780551900",
+      "name": "",
+      "direction": "out",
+      "messageType": "text",
+      "text": "hello",
+      "status": "sent",
+      "createdAt": "2026-05-30T05:50:01.955Z",
+      "read": true
+    }
+  ],
+  "templates": [],
+  "chatbot": {
+    "enabled": false,
+    "welcomeMsg": "",
+    "fallbackMsg": "",
+    "rules": [
+      {
+        "id": "a4b6ae21-f5e6-481c-a7f0-ecc77bc7fd7c",
+        "keyword": "price",
+        "matchType": "contains",
+        "reply": "sade price list",
+        "active": true,
+        "createdAt": "2026-05-29T11:33:58.501Z"
+      }
+    ]
+  },
+  "settings": {
+    "phoneNumberId": "992854413918900",
+    "wabaId": "781289501711971",
+    "accessToken": "EAANoAulQ4bYBRIK7DkFCh70p9i1bIz82v8kCZCHFmMWi0eWqO3hcxHxqRYZC4mNgPnO8yXdJSGgpCSLtgp8PxhoaNWIXqZArzi0YMjOhIZC4iPZBmdRZB7tJkAXE3KSGRZAqkvxi1C8ZA83PdvfrL2Nezg977QMEoqCWUmoE3DN9TuiwtmZBbKJpUZAx3uzMLkRwZDZD",
+    "apiVersion": "v20.0",
+    "webhookToken": ""
+  },
+  "flows": [
+    {
+      "id": "2d873854-75dd-4f44-b394-788b151790d8",
+      "name": "welcom",
+      "triggerKeyword": "hello",
+      "description": "connect krda hai",
+      "active": true,
+      "nodes": [
+        {
+          "id": "613847d6-4992-445e-b670-dc9e0365dabd",
+          "type": "message",
+          "text": "ki hall a",
+          "conditions": [],
+          "nextNodeId": null,
+          "fallbackNodeId": null,
+          "delaySeconds": 0
+        },
+        {
+          "id": "81e6247f-4321-4eb0-b016-32504cdec394",
+          "type": "message",
+          "text": "vadia",
+          "conditions": [],
+          "nextNodeId": null,
+          "fallbackNodeId": null,
+          "delaySeconds": 0
+        }
+      ],
+      "createdAt": "2026-05-30T11:00:28.896Z"
+    }
+  ],
+  "flowSessions": {}
+}
